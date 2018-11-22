@@ -8,6 +8,7 @@ library(xlsx)
 library(noncensus)
 library(rvest)
 library(tidyverse)
+library(sqldf)
 
 
 Quandl.api_key('fCJstrGkz2LkRxzp9AxX')
@@ -18,7 +19,7 @@ data2 = data[1,]
 
 china = Quandl.datatable("DY/MIA")
 
-pricepersqft = read_csv("~/Downloads/pricepersqft.csv")
+pricepersqft = read_csv("pricepersqft.csv")
 
 county_count = pricepersqft %>% dplyr::select(County) %>% 
   group_by(County) %>% summarize(count = length(County))
@@ -143,7 +144,7 @@ for(url in urls){
 }
 hilton_zips = as.data.frame(zips)
 
-zip_county_lookup = read_csv("~/Downloads/ZIP-COUNTY-FIPS_2018-03.csv")
+zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv")
 hilton_county = merge(hilton_zips,zip_county_lookup,by.x ='zips',by.y = 'ZIP')
 hilton_county$COUNTYNAME = strsplit(hilton_county$COUNTYNAME, " ") 
 for (i in 1:190){
@@ -187,7 +188,7 @@ price_2017_4$County = unlist(price_2017_4$County)
 
 
 ## crime rate
-crime_data = read_csv("~/Downloads/crime_data_w_population_and_crime_rate.csv")
+crime_data = read_csv("crime_data_w_population_and_crime_rate.csv")
 crime_data = crime_data %>%
   select(county_name,crime_rate_per_100000,IDNO,CPOPCRIM,CPOPARST,COVIND,MURDER,RAPE,ROBBERY,AGASSLT,BURGLRY,LARCENY,MVTHEFT,ARSON)
 crime_data$county_name = strsplit(crime_data$county_name, " ") 
@@ -223,7 +224,7 @@ price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
 
 
 ##tax rate data
-setwd("~/Downloads/TAXRATES_ZIP5")
+setwd("TAXRATES_ZIP5")
 filenames = list.files(pattern = "*.csv")
 tax_rate_data = read.csv(filenames[1])
 for(i in 2:length(filenames)){
@@ -277,3 +278,36 @@ gasoline_data = data.frame(State=states, Regular=regular, MidGrade=midgrades, Pr
 gasoline_data$State = state.abb[match(gasoline_data$State,state.name)]
 price_2017_7 = left_join(price_2017_6,gasoline_data,by='State')
 
+
+
+
+## Number of colleges
+
+filename = "C:/Users/binha/Documents/Duke/Fall 2018/STAT 523 - Colin/Project/school_info/IPEDS Data Center.html"
+schools = read_html(filename) %>%
+    html_node("table.idc_gridview") %>%
+    html_table() %>%
+    select(-X1) %>% .[-1,]
+
+colnames(schools) <- c("school", "city", "state")
+
+## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
+
+cities <- read.csv("~/Duke/Fall 2018/STAT 523 - Colin/Project/school_info/uscitiesv1.4.csv", 
+                   stringsAsFactors=FALSE) %>%
+    select(city, county_name, state_id)
+
+colleges <- sqldf(
+    "SELECT s.school, 
+    s.city, 
+    c.county_name AS County
+    FROM schools AS s
+    LEFT JOIN cities AS c
+    ON s.city = c.city 
+    AND s.state = c.state_id"
+) %>% 
+    group_by(County) %>%
+    summarise(college_num = n())
+
+price_2017_8 = left_join(price_2017_7, colleges, by='County') %>%
+    mutate(college_num = ifelse(is.na(college_num), 0, college_num))
