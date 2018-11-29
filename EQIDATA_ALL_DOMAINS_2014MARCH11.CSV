@@ -1,8 +1,0 @@
-Variable Definition,Variable Name,Units,Data Type,
-Proportion of roads that are highway ,HWYPROP,miles highways / miles total roads,continuous,
-Proportion of roads that are primary streets,RYPROP,miles primary streets / miles total roads,continuous,
-Traffic fatality rate,fatal_rate,county fatality count/ county population,continuous,
-Percent of population using public transport,pct_pub_transport,percent,continuous,
-Percent persons less than poverty level,pct_pers_lt_pov,count county persons below poverty / county population,continuous,
-Percent unemployed,pct_unemp,count county unemployed / county population,continuous,
-Mean number of violent crimes per capita,violent_rate,count of county violent crime / county population,continuous,
