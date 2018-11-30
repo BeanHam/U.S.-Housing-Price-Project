@@ -312,12 +312,15 @@ colleges <- sqldf(
 price_2017_8 = left_join(price_2017_7, colleges, by='County') %>%
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 
-## traffic, unemployment rate
+## read traffic, unemployment rate. etc data
 epidata <- read_csv("~/STA523/Final-Project/EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
   select(county_name,state,hwyprop,ryprop,
          pct_pub_transport_log,fatal_rate_log,
          pct_pers_lt_pov,pct_unemp) %>% 
-  rename(County=county_name,State=state)
+  rename(County=county_name,State=state)%>% 
+  mutate(County=str_replace_all(County,"County","") %>% 
+           str_trim(side = "both"))
 
-
-price_2017_9 = left_join(price_2017_8, epidata,by=c('County','State'))
+##merge 
+price_2017_9 =left_join(price_2017_8, epidata,by=c('County','State'))%>%
+  mutate_all(funs(replace(., is.na(.), 0)))
