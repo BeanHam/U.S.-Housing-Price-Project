@@ -153,7 +153,7 @@ hilton_zips = as.data.frame(zips)
 zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv")
 hilton_county = merge(hilton_zips,zip_county_lookup,by.x ='zips',by.y = 'ZIP')
 hilton_county$COUNTYNAME = strsplit(hilton_county$COUNTYNAME, " ") 
-for (i in 1:190){
+for (i in 1:189){
   hilton_county$COUNTYNAME[[i]] = hilton_county$COUNTYNAME[[i]][-length(hilton_county$COUNTYNAME[[i]])]
   if (length(hilton_county$COUNTYNAME[[i]]) >= 2){
     hilton_county$COUNTYNAME[[i]] = paste(hilton_county$COUNTYNAME[[i]][1],hilton_county$COUNTYNAME[[i]][2])
@@ -176,12 +176,12 @@ price_2017_3 = left_join(price_2017_2, hilton_county_final, by = c("County"="COU
 
 price_2017_4 = price_2017_3
 price_2017_4$County = strsplit(price_2017_4$County, " ")
-for (i in 1:1146){
+for (i in 1:1669){
   if ((length(price_2017_4$County[[i]]) > 1 & (price_2017_4$County[[i]][2] == 'County')) | (length(price_2017_4$County[[i]]) > 2 & price_2017_4$County[[i]][3] == 'County')){
     price_2017_4$County[[i]] = price_2017_4$County[[i]][-length(price_2017_4$County[[i]])]
   }}
 
-for (i in 1:1146){
+for (i in 1:1669){
   if (length(price_2017_4$County[[i]]) == 2) {
     price_2017_4$County[[i]] = paste(price_2017_4$County[[i]][1],price_2017_4$County[[i]][2])}
   if (length(price_2017_4$County[[i]]) == 3) {
@@ -289,7 +289,8 @@ price_2017_7 = left_join(price_2017_6,gasoline_data,by='State')
 
 ## Number of colleges
 
-filename = "C:/Users/binha/Documents/Duke/Fall 2018/STAT 523 - Colin/Project/school_info/IPEDS Data Center.html"
+filename = "IPEDS Data Center.html"
+setwd("/Users/ricky/Desktop/Final-Project/")
 schools = read_html(filename) %>%
     html_node("table.idc_gridview") %>%
     html_table() %>%
@@ -299,27 +300,29 @@ colnames(schools) <- c("school", "city", "state")
 
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
 
-cities <- read.csv("~/Duke/Fall 2018/STAT 523 - Colin/Project/school_info/uscitiesv1.4.csv", 
+cities <- read.csv("uscitiesv1.4.csv", 
                    stringsAsFactors=FALSE) %>%
     select(city, county_name, state_id)
 
 colleges <- sqldf(
     "SELECT s.school, 
     s.city, 
-    c.county_name AS County
+    c.county_name AS County,
+    s.state
     FROM schools AS s
     LEFT JOIN cities AS c
     ON s.city = c.city 
     AND s.state = c.state_id"
 ) %>% 
-    group_by(County) %>%
+    group_by(County,state) %>%
     summarise(college_num = n())
 
-price_2017_8 = left_join(price_2017_7, colleges, by='County') %>%
+colnames(colleges)[2] = 'State'
+price_2017_8 = left_join(price_2017_7, colleges, by=c('County','State')) %>%
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 
 ## read traffic, unemployment rate. etc data
-epidata <- read_csv("~/STA523/Final-Project/EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
+epidata <- read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
   select(county_name,state,hwyprop,ryprop,
          pct_pub_transport_log,fatal_rate_log,
          pct_pers_lt_pov,pct_unemp) %>% 
