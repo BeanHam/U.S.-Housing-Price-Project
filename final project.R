@@ -21,13 +21,13 @@ china = Quandl.datatable("DY/MIA")
 
 pricepersqft = read_csv("pricepersqft.csv")
 
-county_count = pricepersqft %>% dplyr::select(County) %>% 
-  group_by(County) %>% summarize(count = length(County))
+county_count = pricepersqft %>% dplyr::select(County,State) %>% 
+  group_by(County,State) %>% summarize(count = length(County))
 
 price_2017 = pricepersqft %>% 
   dplyr::select(County,State, `January 2017`) %>%
-  group_by(County) %>% 
-  summarize(State = first(State), price = median(`January 2017`))
+  group_by(County,State) %>% 
+  summarize(price = median(`January 2017`))
 
 
 #first wiki
