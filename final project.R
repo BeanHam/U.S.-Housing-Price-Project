@@ -71,40 +71,46 @@ county_data$State = state.abb[match(county_data$State,state.name)]
 '%ni%' <- Negate('%in%')
 
 difficult_county = price_2017[price_2017$County %ni% county_data$County,]
-price_2017[43,1] = 'Baltimore County'
-price_2017[226,1] = 'Colorado County'
-price_2017[275,1] = 'DeKalb'
-price_2017[276,1] = 'DeSoto'
-price_2017[277,1] = 'DeWitt'
-price_2017[281,1] = 'DeKalb'
-price_2017[283,1] = 'Delaware County'
+price_2017[55,1] = 'Baltimore County'
+price_2017[305,1] = 'Colorado County'
+price_2017[374,1] = 'DeKalb'
+price_2017[375,1] = 'DeSoto'
+price_2017[376,1] = 'DeWitt'
+price_2017[380,1] = 'DeKalb'
+for(i in 382:386){
+  price_2017[i,1] = 'Delaware County'
+}
 price_2017[295,1] = 'Washington County'
-price_2017[297,1] = 'Doña Ana'
-price_2017[302,1] = 'DuPage'
-price_2017[337,1] = 'Fairfax County'
-price_2017[449,1] = 'Hawaii County'
-price_2017[496,1] = 'Iowa County'
-price_2017[507,1] = 'James City County'
-price_2017[555,1] = 'LaPorte'
-price_2017[559,1] = 'LaGrange'
-price_2017[572,1] = 'LaRue'
-price_2017[584,1] = 'Le Flore'
-price_2017[641,1] = 'Matanuska-Susitna'
-price_2017[720,1] = 'Nevada County'
-price_2017[750,1] = 'Ohio County'
-price_2017[753,1] = 'Oklahoma County'
-price_2017[834,1] = "Prince George's"
-price_2017[840,1] = "Queen Anne's"
-price_2017[871,1] = "Roanoke County"
-for (i in 895:907){
+price_2017[405,1] = 'Doña Ana'
+price_2017[419,1] = 'DuPage'
+price_2017[462,1] = 'Fairfax County'
+price_2017[641,1] = 'Hawaii County'
+price_2017[705,1] = 'Iowa County'
+price_2017[727,1] = 'James City County'
+price_2017[815,1] = 'LaPorte'
+price_2017[821,1] = 'LaGrange'
+price_2017[845,1] = 'LaRue'
+price_2017[866,1] = 'Le Flore'
+price_2017[976,1] = 'Matanuska-Susitna'
+price_2017[1100,1] = 'Nevada County'
+price_2017[1133,1] = 'Ohio County'
+price_2017[1136,1] = 'Oklahoma County'
+price_2017[1248,1] = "Prince George's"
+price_2017[1249,1] = "Prince George's"
+price_2017[1262,1] = "Queen Anne's"
+price_2017[1298,1] = "Roanoke County"
+for (i in 1327:1344){
   price_2017[i,1] = paste0('St.',substr(price_2017[i,1],6,100))}
-price_2017[1054,1] = "Utah County"
-price_2017[1085,1] = "Washington County"
-price_2017[1136,1] = "Wyoming County"
+price_2017[1531,1] = "Utah County"
+for(i in 1572:1588){
+  price_2017[i,1] = "Washington County"
+}
+price_2017[1661,1] = "Wyoming County"
 
 difficult_county_check = price_2017[price_2017$County %ni% county_data$County,]
-price_2017[902,1] = "St. Louis County"
-price_2017[906,1] = "St. Mary's"
+price_2017[1338,1] = "St. Louis County"
+price_2017[1339,1] = "St. Louis County"
+price_2017[1343,1] = "St. Mary's"
 
 price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
 #write.xlsx(price_2017_2, "/Users/ricky/Downloads/price_2017.xlsx")
