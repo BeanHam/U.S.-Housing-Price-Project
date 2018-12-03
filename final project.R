@@ -317,68 +317,12 @@ data <- sqldf(
     AND s.state = c.state_id"
 ) %>% 
     group_by(county, state) %>%
-    summarise(college_num = n())
-
-
-## load public schools
-public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
-    select(1, 2, 4)
-colnames(public_school) <- c("state","county", "public_school_num")
-
-public_school = public_school %>% 
-    mutate(county = str_trim(str_replace(.$county, "County", "")),
-           public_school_num = as.numeric(public_school_num),
-           state = stri_sub(str_trim(state), -2, -1)) %>% 
-    na.omit()
-
-public_school = public_school %>%
-    group_by(county, state) %>% 
-    summarise(public_school_count = sum(public_school_num, na.rm = TRUE))
-
-data = merge(data, 
-             public_school, 
-             by = c("county", "state"),
-             all.y = TRUE) %>% 
-    mutate(college_num = ifelse(is.na(college_num), 0, college_num))
-
-
-## load private schools
-private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
-    select(2, 5)
-colnames(private_school) = c("state", "county")
-
-reference = read_excel("State reference.xlsx", col_names = FALSE)
-colnames(reference) = c("state", "abbr")
-reference = reference %>%
-    mutate(state = toupper(state))
-
-private_school = merge(private_school,
-                       reference,
-                       by = "state",
-                       all.x = TRUE) %>% 
-    na.omit() %>% 
-    select(2, 3) %>% 
-    mutate(county = toTitleCase(tolower(county)))%>% 
-    group_by(county, abbr) %>% 
-    summarise(private_school_count = n()) %>% 
-    .[-1:-8, ] %>% 
-    mutate(state = abbr) %>% 
-    select(-abbr)
-
-
-data = merge(data, 
-             private_school, 
-             by = c("county", "state"),
-             all.y = TRUE) %>% 
-    mutate(college_num = ifelse(is.na(college_num), 0, college_num),
-           public_school_count = ifelse(is.na(public_school_count), 0, public_school_count)) %>% 
-    rename(State = state, 
+    summarise(college_num = n()) %>% 
+    rename(State = state,
            County = county)
 
 price_2017_8 = left_join(price_2017_7, data, by=c('County','State')) %>%
-    mutate(college_num = ifelse(is.na(college_num), 0, college_num),
-           public_school_count = ifelse(is.na(public_school_count), 0, public_school_count),
-           private_school_count = ifelse(is.na(private_school_count), 0, private_school_count))
+    mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 
 
 ## read traffic, unemployment rate. etc data
@@ -615,9 +559,12 @@ st_data <-st_data %>% separate(name, c("name", "location1"), " . ",remove=TRUE)%
   separate(location, c("location", "other"), "[(]",remove=TRUE)%>%
   select(name, location)
 
-shooping_mall_num = read.xlsx("shooping_mall_num.xlsx",1)
-shopping = shooping_mall_num[rep(row.names(shooping_mall_num), shooping_mall_num$Number.of.Malls), 1] %>%
+
+shooping_mall_num = read_xlsx("shooping_mall_num.xlsx",1)
+shopping = shooping_mall_num[rep(row.names(shooping_mall_num), shooping_mall_num$'Number of Malls'), 1] %>%
   as.data.frame() %>% .[1:821,]
+
+
 st_data = st_data %>%
   mutate(STATE = shopping)
 
@@ -636,4 +583,52 @@ shopping_mall_data_final = shopping_mall_data_final %>%
 colnames(shopping_mall_data_final)=c("County","State","shopping_mall_count")
 
 
-price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","State"))
+price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","State")) %>% 
+    mutate(shopping_mall_count = ifelse(is.na(shopping_mall_count), 0, shopping_mall_count))
+
+
+### Private and Public school info
+## load public schools
+public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
+    select(1, 2, 4)
+colnames(public_school) <- c("State","County", "public_school_num")
+
+public_school = public_school %>% 
+    mutate(County = str_trim(str_replace(.$County, "County", "")),
+           public_school_num = as.numeric(public_school_num),
+           State = stri_sub(str_trim(State), -2, -1)) %>% 
+    na.omit()
+
+public_school = public_school %>%
+    group_by(County, State) %>% 
+    summarise(public_school_count = sum(public_school_num, na.rm = TRUE))
+
+price_2017_11 = left_join(price_2017_10, public_school, by=c('County','State')) %>%
+    mutate(public_school_count = ifelse(is.na(public_school_count), 0, public_school_count))
+
+
+## load private schools
+private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
+    select(2, 5)
+colnames(private_school) = c("state", "county")
+
+reference = read_excel("State reference.xlsx", col_names = FALSE)
+colnames(reference) = c("state", "abbr")
+reference = reference %>%
+    mutate(state = toupper(state))
+
+private_school = merge(private_school,
+                       reference,
+                       by = "state",
+                       all.x = TRUE) %>% 
+    na.omit() %>% 
+    select(2, 3) %>% 
+    mutate(county = toTitleCase(tolower(county)))%>% 
+    group_by(county, abbr) %>% 
+    summarise(private_school_count = n()) %>% 
+    .[-1:-8, ] %>% 
+    rename(State = abbr,
+           County = county)
+
+price_2017_12 = left_join(price_2017_11, private_school, by=c('County','State')) %>%
+    mutate(private_school_count = ifelse(is.na(private_school_count), 0, private_school_count))
