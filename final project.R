@@ -9,7 +9,9 @@ library(noncensus)
 library(rvest)
 library(tidyverse)
 library(sqldf)
-
+library(stringi)
+library(readxl)
+library(tools)
 
 Quandl.api_key('fCJstrGkz2LkRxzp9AxX')
 
@@ -286,11 +288,10 @@ price_2017_7 = left_join(price_2017_6,gasoline_data,by='State')
 
 
 
-
 ## Number of colleges
 
 filename = "IPEDS Data Center.html"
-setwd("/Users/ricky/Desktop/Final-Project/")
+setwd("C:/Users/binha/Documents/Duke/Fall 2018/STAT 523 - Colin/Project/Final-Project/")
 schools = read_html(filename) %>%
     html_node("table.idc_gridview") %>%
     html_table() %>%
@@ -304,22 +305,81 @@ cities <- read.csv("uscitiesv1.4.csv",
                    stringsAsFactors=FALSE) %>%
     select(city, county_name, state_id)
 
-colleges <- sqldf(
+## Joint school info with city info
+data <- sqldf(
     "SELECT s.school, 
-    s.city, 
-    c.county_name AS County,
-    s.state
+    s.city,
+    s.state,
+    c.county_name AS county
     FROM schools AS s
     LEFT JOIN cities AS c
     ON s.city = c.city 
     AND s.state = c.state_id"
 ) %>% 
-    group_by(County,state) %>%
+    group_by(county, state) %>%
     summarise(college_num = n())
 
-colnames(colleges)[2] = 'State'
-price_2017_8 = left_join(price_2017_7, colleges, by=c('County','State')) %>%
+
+## load public schools
+public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
+    select(1, 2, 4)
+colnames(public_school) <- c("state","county", "public_school_num")
+
+public_school = public_school %>% 
+    mutate(county = str_trim(str_replace(.$county, "County", "")),
+           public_school_num = as.numeric(public_school_num),
+           state = stri_sub(str_trim(state), -2, -1)) %>% 
+    na.omit()
+
+public_school = public_school %>%
+    group_by(county, state) %>% 
+    summarise(public_school_count = sum(public_school_num, na.rm = TRUE))
+
+data = merge(data, 
+             public_school, 
+             by = c("county", "state"),
+             all.y = TRUE) %>% 
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
+
+
+## load private schools
+private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
+    select(2, 5)
+colnames(private_school) = c("state", "county")
+
+reference = read_excel("State reference.xlsx", col_names = FALSE)
+colnames(reference) = c("state", "abbr")
+reference = reference %>%
+    mutate(state = toupper(state))
+
+private_school = merge(private_school,
+                       reference,
+                       by = "state",
+                       all.x = TRUE) %>% 
+    na.omit() %>% 
+    select(2, 3) %>% 
+    mutate(county = toTitleCase(tolower(county)))%>% 
+    group_by(county, abbr) %>% 
+    summarise(private_school_count = n()) %>% 
+    .[-1:-8, ] %>% 
+    mutate(state = abbr) %>% 
+    select(-abbr)
+
+
+data = merge(data, 
+             private_school, 
+             by = c("county", "state"),
+             all.y = TRUE) %>% 
+    mutate(college_num = ifelse(is.na(college_num), 0, college_num),
+           public_school_count = ifelse(is.na(public_school_count), 0, public_school_count)) %>% 
+    rename(State = state, 
+           County = county)
+
+price_2017_8 = left_join(price_2017_7, data, by=c('County','State')) %>%
+    mutate(college_num = ifelse(is.na(college_num), 0, college_num),
+           public_school_count = ifelse(is.na(public_school_count), 0, public_school_count),
+           private_school_count = ifelse(is.na(private_school_count), 0, private_school_count))
+
 
 ## read traffic, unemployment rate. etc data
 epidata <- read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
@@ -574,5 +634,6 @@ shopping_mall_data_final = shopping_mall_data_final %>%
   group_by(COUNTYNAME,STATE) %>%
   summarise(Count = length(COUNTYNAME))
 colnames(shopping_mall_data_final)=c("County","State","shopping_mall_count")
+
 
 price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","State"))
