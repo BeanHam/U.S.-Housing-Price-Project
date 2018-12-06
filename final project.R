@@ -79,9 +79,13 @@ price_2017[374,1] = 'DeKalb'
 price_2017[375,1] = 'DeSoto'
 price_2017[376,1] = 'DeWitt'
 price_2017[380,1] = 'DeKalb'
+
+###
 for(i in 382:386){
   price_2017[i,1] = 'Delaware County'
 }
+### price_2017[382:386, 1] = 'Delaware County'
+
 price_2017[295,1] = 'Washington County'
 price_2017[405,1] = 'Doña Ana'
 price_2017[419,1] = 'DuPage'
@@ -101,12 +105,21 @@ price_2017[1248,1] = "Prince George's"
 price_2017[1249,1] = "Prince George's"
 price_2017[1262,1] = "Queen Anne's"
 price_2017[1298,1] = "Roanoke County"
+
+###
 for (i in 1327:1344){
   price_2017[i,1] = paste0('St.',substr(price_2017[i,1],6,100))}
+### price_2017[1327:1344, 1] = 1327:1344 %>% sapply(function(i){
+###     paste0('St.',substr(price_2017[i,1],6,100))})
+
 price_2017[1531,1] = "Utah County"
+
+###
 for(i in 1572:1588){
   price_2017[i,1] = "Washington County"
 }
+### price_2017[1527:1588, 1] = "Washington County"
+
 price_2017[1661,1] = "Wyoming County"
 
 difficult_county_check = price_2017[price_2017$County %ni% county_data$County,]
@@ -127,6 +140,8 @@ links = html_nodes(webpage,'ul.directory_locations_list li a')
 states = html_text(links)
 urls = html_attr(links, "href")
 urls = paste0(baseURL, urls)
+
+###
 zips = c()
 for(url in urls){
   webpage = read_html(url)
@@ -150,9 +165,32 @@ for(url in urls){
     zips = c(zips, zipcode)
   }
 }
+### zips = sapply(urls, function(url){
+###     url %>%
+###         read_html() %>%
+###         html_nodes('ul.directory_locations_list li a') %>%
+###         {paste0(baseURL, html_attr(., "href"))} %>%
+###         sapply(function(locationURL){
+###             locationURL %>%
+###                 read_html() %>%
+###                 html_nodes('ul.directory_hotels_list li') %>%
+###                 html_text() %>%
+###                 str_replace("\t", "") %>%
+###                 str_replace("\r\n", "") %>%
+###                 {strsplit(., " ")[[1]]} %>%
+###                 {.[length(.)]} %>%
+###                 {strsplit(., "USA")[[1]][1]} %>%
+###                 substr(1, 5)
+###         })
+### }) %>%
+###     unlist() %>%
+###     unname()
+
 hilton_zips = as.data.frame(zips)
 
 zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv")
+
+###
 hilton_county = merge(hilton_zips,zip_county_lookup,by.x ='zips',by.y = 'ZIP')
 hilton_county$COUNTYNAME = strsplit(hilton_county$COUNTYNAME, " ") 
 for (i in 1:189){
@@ -161,6 +199,11 @@ for (i in 1:189){
     hilton_county$COUNTYNAME[[i]] = paste(hilton_county$COUNTYNAME[[i]][1],hilton_county$COUNTYNAME[[i]][2])
   }}
 hilton_county$COUNTYNAME = unlist(hilton_county$COUNTYNAME)
+### hilton_county2 = merge(hilton_zips,zip_county_lookup,by.x ='zips',by.y = 'ZIP') %>%
+###     mutate(COUNTYNAME = COUNTYNAME %>%
+###                str_locate_all(" ") %>%
+###                sapply(function(mat){mat[min(dim(mat), 2), 1] - 1}) %>%
+###                {str_sub(COUNTYNAME, 1, .)})
 
 
 distinct_count = hilton_county%>%
