@@ -413,33 +413,29 @@ shopping_mall_data = bind_rows(
   mutate('STATE' = 'TX'),
   st_data)
 
-shopping_mall_data2 = shopping_mall_data %>%
+shopping_mall_data_clean = shopping_mall_data %>%
   select(name, location)%>%
   separate(name, c("name", "other"), "[(]",remove=TRUE)%>%
   select(name, location)%>%
   separate(location, c("location", "other"), "[(]",remove=TRUE) %>%
   select(name, location)
 
-shopping_mall_data = bind_cols(shopping_mall_data2,shopping_mall_data) %>% 
-    select(name,location,STATE)
+shopping_mall_data = bind_cols(shopping_mall_data_clean,shopping_mall_data) %>% 
+    select(name,location,STATE) %>% 
+    rename(City = location, State = STATE)
 ```
 
 ```{r}
-shopping_mall_data$location = tolower(shopping_mall_data$location)
-colnames(shopping_mall_data)[2] = 'CITY'
-shopping_mall_data$CITY = str_trim(shopping_mall_data$CITY,"left")
-zip_county_lookup$CITY = tolower(zip_county_lookup$CITY)
-shopping_mall_data_final = merge(shopping_mall_data,zip_county_lookup,by=c("CITY","STATE")) %>%
-  select(name,CITY,STATE,COUNTYNAME) %>% unique()
+shopping_mall_data$City = tolower(shopping_mall_data$City) %>% str_trim(.,"left")
+cities$City = tolower(cities$City)
 
-shopping_mall_data_final = shopping_mall_data_final %>%
-  group_by(COUNTYNAME,STATE) %>%
-  summarise(Count = length(COUNTYNAME))
-colnames(shopping_mall_data_final)=c("County","State","shopping_mall_count")
-
+shopping_mall_data_final = merge(shopping_mall_data,cities,by=c("City","State")) %>%
+  select(name,City,State,County) %>% unique() %>%
+  group_by(County,State) %>%
+  summarise(num_shoppingmall = length(County)) 
 
 price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","State")) %>% 
-    mutate(shopping_mall_count = ifelse(is.na(shopping_mall_count), 0, shopping_mall_count))
+    mutate(num_shoppingmall = ifelse(is.na(num_shoppingmall), 0, num_shoppingmall))
 ```
 
 
