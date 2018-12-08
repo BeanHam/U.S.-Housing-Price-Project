@@ -253,6 +253,24 @@ crime_data$County[w] = crime_lost$County[1]
 price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
 ```
 
+6. tax rate data
+
+```{r}
+setwd("TAXRATES_ZIP5")
+filenames = list.files(pattern = "*.csv")
+tax_rate_data = read.csv(filenames[1])
+for(i in 2:length(filenames)){
+  temp = read.csv(filenames[i])
+  tax_rate_data = rbind(tax_rate_data, temp)
+}
+tax_rate_data = left_join(tax_rate_data,zip_county_lookup,by=c("ZipCode"="ZIP"))
+
+tax_rate_data = tax_rate_data %>% select(County,State,StateRate,EstimatedCombinedRate,EstimatedCountyRate,EstimatedCityRate,EstimatedSpecialRate,RiskLevel)
+
+tax_rate_data = tax_rate_data[!duplicated(tax_rate_data[,1:2]), ]
+Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
+```
+
 
 
 
