@@ -108,4 +108,57 @@ price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
 
 ```
 
+3. hilton data within the country
+
+```{r}
+baseURL =  "https://www3.hilton.com"
+links = read_html("https://www3.hilton.com/en/hotel-locations/us/index.html") %>%
+    html_nodes(.,'ul.directory_locations_list li a') 
+states = html_text(links)
+urls = html_attr(links, "href") %>% paste0(baseURL, .)
+
+zips = sapply(urls, function(url){
+     url %>%
+         read_html() %>%
+         html_nodes('ul.directory_locations_list li a') %>%
+         {paste0(baseURL, html_attr(., "href"))} %>%
+         sapply(function(locationURL){
+             locationURL %>%
+                 read_html() %>%
+                 html_nodes('ul.directory_hotels_list li') %>%
+                 html_text() %>%
+                 str_replace("\t", "") %>%
+                 str_replace("\r\n", "") %>%
+                 {strsplit(., " ")[[1]]} %>%
+                 {.[length(.)]} %>%
+                 {strsplit(., "USA")[[1]][1]} %>%
+                 substr(1, 5)
+             })
+ }) %>%
+     unlist() %>%
+     unname() %>%
+    as.data.frame() 
+colnames(zips) = "zips"
+```
+
+```{r}
+zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv")
+
+hilton_county = merge(zips,zip_county_lookup,by.x ='zips',by.y = 'ZIP') %>%
+     mutate(COUNTYNAME = COUNTYNAME %>%
+                str_locate_all(" ") %>%
+                sapply(function(mat){mat[min(dim(mat), 2), 1] - 1}) %>%
+                {str_sub(COUNTYNAME, 1, .)})
+
+distinct_count = hilton_county%>%
+  group_by(COUNTYNAME,STATE) %>%
+  summarize(count = length(COUNTYNAME)) %>%
+    mutate(hilton_count = count) %>% 
+    dplyr::select(COUNTYNAME,STATE,hilton_count)
+    
+price_2017_3 = left_join(price_2017_2, distinct_count, by = c("County"="COUNTYNAME","State" = "STATE")) %>%
+  mutate_all(funs(replace(., is.na(.), 0)))
+
+```
+
 
