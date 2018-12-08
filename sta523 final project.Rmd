@@ -439,4 +439,40 @@ price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","S
 ```
 
 
+11. Public high school data
+
+```{r}
+public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
+    select(1, 2, 4) %>%
+    rename(State = County.Name, County = County.Name..Public.School..2015.16, public_school_num = Total.Number.of.Public.Schools..Public.School..2015.16) %>%
+    mutate(County = str_trim(str_replace(.$County, "County", "")),
+           public_school_num = as.numeric(public_school_num),
+           State = stri_sub(str_trim(State), -2, -1)) %>% 
+    na.omit() %>%
+    group_by(County, State) %>% 
+    summarise(public_school_count = sum(public_school_num, na.rm = TRUE))
+
+price_2017_11 = left_join(price_2017_10, public_school, by=c('County','State')) %>%
+    mutate(public_school_count = ifelse(is.na(public_school_count), 0, public_school_count))
+```
+
+12. Private high school data
+
+```{r}
+private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
+    select(2, 5) %>% 
+    rename(State = State.Name..Private.School..Latest.available.year, County = County.Name..Private.School..2015.16) %>% 
+    mutate(State = state.abb[match(toTitleCase(tolower(State)),state.name)],
+           County = toTitleCase(tolower(County))) %>%
+    group_by(County, State) %>% 
+    summarise(private_school_count = n()) 
+
+price_2017_12 = left_join(price_2017_11, private_school, by=c('County','State')) %>%
+    mutate(private_school_count = ifelse(is.na(private_school_count), 0, private_school_count))
+```
+
+
+
+
+
 
