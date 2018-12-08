@@ -288,6 +288,26 @@ price_2017_7 = left_join(Price_2017_6,gasoline_data,by='State')
 
 8. number of colleges
 
+```{r}
+## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
+
+schools = read_html("IPEDS Data Center.html") %>%
+    html_node("table.idc_gridview") %>%
+    html_table() %>%
+    select(-X1) %>% .[-1,]
+
+colnames(schools) = c("school", "City", "State")
+
+cities = zip_county_lookup %>% select(CITY, County, STATE) %>% unique() %>%
+    rename(State = STATE, City = CITY)
+
+school_data = left_join(schools,cities, by=c('City','State'))%>% 
+    group_by(County, State) %>%
+    summarise(college_num = n()) 
+
+price_2017_8 = left_join(price_2017_7, data, by=c('County','State')) %>%
+    mutate(college_num = ifelse(is.na(college_num), 0, college_num))
+```
 
 
 
