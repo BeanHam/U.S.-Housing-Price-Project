@@ -271,6 +271,25 @@ tax_rate_data = tax_rate_data[!duplicated(tax_rate_data[,1:2]), ]
 Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
 ```
 
+7. gasoline price data
+
+```{r}
+get_gasoline = function(k){
+    dat = trimws(html_text(html_nodes(web, paste0("td:nth-child(",k,")"))))
+}
+
+web = read_html("https://gasprices.aaa.com/state-gas-price-averages/")
+gasoline_data = data.frame(State=get_gasoline(1), Regular=get_gasoline(2), MidGrade=get_gasoline(3), Premium=get_gasoline(4), Diesel=get_gasoline(5))
+
+gasoline_data$State = state.abb[match(gasoline_data$State,state.name)]
+price_2017_7 = left_join(Price_2017_6,gasoline_data,by='State')
+
+```
+
+8. number of colleges
+
+
+
 
 
 
