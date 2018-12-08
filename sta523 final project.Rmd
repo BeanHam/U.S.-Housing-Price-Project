@@ -1,0 +1,111 @@
+---
+title: "sta523 final project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(Quandl)
+library(readr)
+library(dplyr)
+library(rvest)
+library(stringr)
+library(xlsx)
+library(noncensus)
+library(rvest)
+library(tidyverse)
+library(sqldf)
+library(stringi)
+library(readxl)
+library(tools)
+```
+
+1. base data
+
+```{r}
+pricepersqft = read_csv("pricepersqft__.csv")
+
+county_count = pricepersqft %>% dplyr::select(County,State) %>% 
+  group_by(County,State) %>% summarize(count = length(County))
+
+price_2017 = pricepersqft %>% 
+  dplyr::select(County,State, `17-Jan`) %>%
+  group_by(County,State) %>% 
+  summarize(price = median(`17-Jan`))
+```
+
+
+2. Population data from wikipedia
+
+```{r}
+url <- "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income"
+
+df = read_html(url) %>%
+  html_nodes("table.wikitable.sortable") %>%
+  .[[1]] %>%
+  html_table() %>% 
+  filter(.$State != "")
+
+
+county_data <- data.frame(
+  County = df$`County-equivalent` %>% as.character(.),
+  State = df$State %>% as.character(.),
+  Income_PerCapita = df$`Per capitaincome` %>% 
+    str_replace_all(",", "") %>%
+    substr(2, 10000) %>% 
+    as.numeric(as.character(.)),
+  Median_Household_Income = df$Medianhouseholdincome %>% 
+    str_replace_all(",", "") %>%
+    substr(2, 10000) %>% 
+    as.numeric(as.character(.)),
+  Median_Family_Income = df$Medianfamilyincome %>% 
+    str_replace_all(",", "") %>%
+    substr(2, 10000) %>% 
+    as.numeric(as.character(.)),
+  Population = df$Population %>% 
+    str_replace_all(",", "") %>% 
+    as.numeric(as.character(.)),
+  Num_Household = df$`Number ofhouseholds` %>% 
+    str_replace_all(",", "") %>% 
+    as.numeric(as.character(.))
+)
+
+county_data$State = state.abb[match(county_data$State,state.name)]
+
+'%ni%' <- Negate('%in%')
+
+difficult_county = price_2017[price_2017$County %ni% county_data$County,]
+```
+
+```{r}
+w = which(price_2017$County == difficult_county$County[1])
+w[length(w)]
+price_2017[w[1]:w[length(w)], 1] = 'Delaware County'
+
+w = which(price_2017$County == difficult_county$County[8])
+ww = which(price_2017$County == difficult_county$County[25])
+
+price_2017[w[1]:ww, 1] = w[1]:ww %>% sapply(function(i){
+     paste0('St.',substr(price_2017[i,1],6,100))})
+
+w = which(price_2017$County == difficult_county$County[26])
+price_2017[w[1]:w[length(w)], 1] = 'Washington County'
+
+difficult_county = price_2017[price_2017$County %ni% county_data$County,]
+
+w = which(price_2017$County == difficult_county$County[3])
+price_2017[w[1]:w[length(w)], 1] = 'St. Louis County'
+
+w = which(price_2017$County == difficult_county$County[5])
+price_2017[w[1]:w[length(w)], 1] = "St. Mary's"
+
+price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
+
+```
+
+
