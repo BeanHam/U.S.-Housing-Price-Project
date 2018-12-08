@@ -162,6 +162,7 @@ price_2017_3 = left_join(price_2017_2, distinct_count, by = c("County"="COUNTYNA
 
 ```
 
+
 4. clean the dataset 
 
 ```{r}
@@ -176,15 +177,38 @@ for (i in 1:n){
     |df$County[[i]][length(df$County[[i]])] ==
     'Municipality'
     |df$County[[i]][length(df$County[[i]])] == 'Municipio'
-    |df$County[[i]][length(df$County[[i]])] == 'Island')
+    |df$County[[i]][length(df$County[[i]])] == 'Island'
+    |df$County[[i]][length(df$County[[i]])] == 'County,' 
+    |df$County[[i]][length(df$County[[i]])] == 'Borough,'  
+    |df$County[[i]][length(df$County[[i]])] == 'Parish,'
+    |df$County[[i]][length(df$County[[i]])] ==
+    'Municipality,'
+    |df$County[[i]][length(df$County[[i]])] == 'Municipio,'
+    |df$County[[i]][length(df$County[[i]])] == 'Island,')
     {df$County[[i]] = df$County[[i]][-length(df$County[[i]])]}
       
     if (df$County[[i]][length(df$County[[i]])] == 'city' 
-    | df$County[[i]][length(df$County[[i]])] == 'City')
+    | df$County[[i]][length(df$County[[i]])] == 'City'
+    | df$County[[i]][length(df$County[[i]])] == 'city,' 
+    | df$County[[i]][length(df$County[[i]])] == 'City,')
     {df$County[[i]][length(df$County[[i]])] = 'City'}}
 }
-
 for (i in 1:n){
+  if (length(df$County[[i]]) == 2){
+    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2])}
+  if (length(df$County[[i]]) == 3) {
+    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3])}
+  if (length(df$County[[i]]) == 4) {
+    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3],df$County[[i]][4])}
+  if (length(df$County[[i]]) == 5) {
+    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3],df$County[[i]][4],df$County[[i]][5])}
+}
+ df$County = unlist(df$County)
+ return(df)
+}
+
+bind = function(df){
+  for (i in 1:n){
   if (length(df$County[[i]]) == 2){
     df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2])}
   if (length(df$County[[i]]) == 3) {
@@ -200,10 +224,33 @@ for (i in 1:n){
 ```
 
 ```{r}
-price_2017_4 = clean_county(price_2017_3)
+price_2017_4 = clean_county(price_2017_3) 
 zip_county_lookup = clean_county(zip_county_lookup) %>%
   dplyr::select(ZIP,STATE,County,CITY)
+```
 
+
+5. crime rate data
+
+```{r}
+crime_data = read_csv("crime_data_w_population_and_crime_rate.csv")
+crime_data = crime_data %>%
+  select(county_name,crime_rate_per_100000,IDNO,CPOPCRIM,CPOPARST,COVIND,MURDER,RAPE,ROBBERY,AGASSLT,BURGLRY,LARCENY,MVTHEFT,ARSON)
+
+crime_data$county_name = strsplit(crime_data$county_name, " ") 
+crime_data$State = NA
+colnames(crime_data)[1] = "County"
+for (i in 1:dim(crime_data)[1]){
+  crime_data$State[i] = crime_data$County[[i]][length(crime_data$County[[i]])]
+  crime_data$County[[i]] = crime_data$County[[i]][-length(crime_data$County[[i]])]}
+
+crime_data = crime_data %>% bind() %>% clean_county()
+price_2017_5 = merge(price_2017_4,crime_data,by=c('County','State'))
+
+crime_lost = price_2017_4[price_2017_4$County %ni% price_2017_5$County,]
+w = which(crime_data$County == 'Larue')
+crime_data$County[w] = crime_lost$County[1]
+price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
 ```
 
 
