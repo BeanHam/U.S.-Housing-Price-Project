@@ -378,24 +378,6 @@ colnames(dat)<-c("name","location")
 return(dat)
 }
 
-al_data = read_wikitable_nonflat("Alabama") %>% mutate('STATE' = 'AL')
-ca_data = read_wikilist("California",181) %>%
-  separate(location, c("location", "state"), ",",remove=TRUE, extra = "merge") %>% 
-  select(name, location) %>% 
-  mutate('STATE' = 'CA') 
-md_data = read_wikilist("Maryland",34) %>% mutate('STATE' = 'MD')
-mi_data = read_wikitable_flat("Michigan",8,7,29,36,30,37) %>% 
-    separate(location, c("location", "latitude"), "4",remove=TRUE, extra = "merge") %>% select(name, location) %>% 
-  mutate('STATE' = 'MI')
-nj_data = read_wikitable_nonflat("New_Jersey") %>% mutate('STATE' = 'NJ')
-or_data = read_wikitable_flat("Oregon",7,5,NA,NA,NA,NA) %>% 
-  mutate('STATE' = 'OR')
-pa_data = read_wikitable_nonflat("Pennsylvania") %>% mutate('STATE' = 'PA')
-texas = read_wikilist("Texas",50) %>% .[15:50,] %>% separate(location, c("location", "other"), "[(]",remove=TRUE, extra = "merge") %>% 
-  select(name, location)
-tx_data = rbind(read_texas(1),read_texas(2),read_texas(3),texas) %>% 
-  mutate('STATE' = 'TX')
-
 page = read_html("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_the_United_States")
 
 st_data = data_frame(
@@ -411,7 +393,25 @@ shopping = shooping_mall_num[rep(row.names(shooping_mall_num), shooping_mall_num
   as.data.frame() %>% .[1:821,]
 st_data = st_data %>% mutate(STATE = shopping)
 
-shopping_mall_data = bind_rows(al_data,ca_data,md_data,mi_data,nj_data,or_data,pa_data,tx_data,st_data)
+shopping_mall_data = bind_rows(
+    al_data = read_wikitable_nonflat("Alabama") %>% mutate('STATE' = 'AL'),
+    ca_data = read_wikilist("California",181) %>%
+  separate(location, c("location", "state"), ",",remove=TRUE, extra = "merge") %>% 
+  select(name, location) %>% 
+  mutate('STATE' = 'CA'),
+  md_data = read_wikilist("Maryland",34) %>% mutate('STATE' = 'MD'),
+  mi_data = read_wikitable_flat("Michigan",8,7,29,36,30,37) %>% 
+    separate(location, c("location", "latitude"), "4",remove=TRUE, extra = "merge") %>% select(name, location) %>% 
+  mutate('STATE' = 'MI'),
+  nj_data = read_wikitable_nonflat("New_Jersey") %>% mutate('STATE' = 'NJ'),
+  or_data = read_wikitable_flat("Oregon",7,5,NA,NA,NA,NA) %>% 
+  mutate('STATE' = 'OR'),
+  pa_data = read_wikitable_nonflat("Pennsylvania") %>% mutate('STATE' = 'PA'),
+  tx_data = rbind(read_texas(1),read_texas(2),read_texas(3),
+                texas = read_wikilist("Texas",50) %>% .[15:50,] %>% separate(location, c("location", "other"), "[(]",remove=TRUE, extra = "merge") %>% 
+  select(name, location)) %>% 
+  mutate('STATE' = 'TX'),
+  st_data)
 
 shopping_mall_data2 = shopping_mall_data %>%
   select(name, location)%>%
