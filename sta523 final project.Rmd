@@ -309,6 +309,89 @@ price_2017_8 = left_join(price_2017_7, data, by=c('County','State')) %>%
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 ```
 
+9. Traffic data 
+
+```{r}
+epidata = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
+  select(county_name,state,hwyprop,ryprop,
+         pct_pub_transport_log,fatal_rate_log,
+         pct_pers_lt_pov,pct_unemp) %>% 
+  rename(County=county_name,State=state)%>% 
+  mutate(County=str_replace_all(County,"County","") %>% 
+           str_trim(side = "both"))
+
+price_2017_9 =left_join(price_2017_8, epidata,by=c('County','State'))%>%
+  mutate_all(funs(replace(., is.na(.), 0)))
+
+```
+
+10. shopping mall data 
+
+```{r}
+read_wikitable_flat = function(state,n1,k,n4,n5,l4,l5){
+    l1 = n1+1
+    url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_",state)
+    dat = read_html(url) %>%
+  html_nodes("table.wikitable.sortable") %>%
+  html_table() %>% flatten()
+  data=data.frame(
+  name=c(dat[[1]] %>% as.character(.),dat[[n1]] %>% as.character(.),
+         dat[[n1+k]] %>% as.character(.),dat[[n1+2*k]] %>% as.character(.),
+         dat[[n4]] %>% as.character(.),dat[[n5]] %>% as.character(.)
+  ),
+  location=c(dat[[2]] %>% as.character(.),dat[[l1]] %>% as.character(.),
+             dat[[l1+k]] %>% as.character(.),dat[[l1+2*k]] %>% as.character(.),
+             dat[[l4]] %>% as.character(.),dat[[l5]] %>% as.character(.)
+  ))
+  return(data)
+}
+
+read_wikitable_nonflat = function()
+
+read_wikilist = function(state){
+url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_",state)
+page = read_html(url)
+dat = data_frame(
+  name=html_nodes(page,"li") %>% html_text() 
+)
+}
+
+al_data = data_frame(
+  name = read_wikitable("Alabama")[[1]][[1]] %>% as.character(.),
+  location=read_wikitable("Alabama")[[1]][[2]] %>% as.character(.)
+) %>% mutate('STATE' = 'AL')
+
+n_ca = 181 #known from the wiki
+ca_data = read_wikilist("California") %>% .[1:n_ca,] %>%
+  separate(name, c("name", "location"), "-",remove=TRUE) %>%
+  mutate('STATE' = 'CA') 
+
+n_md = 34 #known from the wiki
+md_data = read_wikilist("Maryland") %>% .[1:n_md,] %>%
+    separate(name, c("name", "location"), "-",remove=TRUE) %>% 
+  mutate('STATE' = 'MD')
+
+mi_data = read_wikitable_flat("Michigan",8,7,29,36,30,37) %>% 
+    mutate('STATE' = 'MI')
+
+
+nj_data = data_frame(
+  name = read_wikitable("New_Jersey")[[1]][[1]] %>% as.character(.),
+  location=read_wikitable("New_Jersey")[[1]][[2]] %>% as.character(.)
+)
+
+or_data = read_wikitable_flat("Oregon",7,5,NA,NA,NA,NA) %>% 
+  mutate('STATE' = 'OR')
+
+pa_data = data_frame(
+  name = read_wikitable("Pennsylvania")[[1]][[1]] %>% as.character(.),
+  location = read_wikitable("Pennsylvania")[[1]][[2]] %>% as.character(.)
+) %>% mutate('STATE' = 'PA')
+
+
+
+
+```
 
 
 
