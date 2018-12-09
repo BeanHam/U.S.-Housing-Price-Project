@@ -25,7 +25,7 @@ library(readxl)
 library(tools)
 ```
 
-1. base data
+## 1. base data
 
 ```{r}
 pricepersqft = read_csv("pricepersqft__.csv")
@@ -40,7 +40,7 @@ price_2017 = pricepersqft %>%
 ```
 
 
-2. Population data from wikipedia
+## 2. Population data from wikipedia
 
 ```{r}
 url <- "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income"
@@ -108,7 +108,7 @@ price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
 
 ```
 
-3. hilton data within the country
+## 3. hilton data within the country
 
 ```{r}
 baseURL =  "https://www3.hilton.com"
@@ -163,7 +163,7 @@ price_2017_3 = left_join(price_2017_2, distinct_count, by = c("County"="COUNTYNA
 ```
 
 
-4. clean the dataset 
+## 4. clean the dataset 
 
 ```{r}
 clean_county = function(df){
@@ -230,7 +230,7 @@ zip_county_lookup = clean_county(zip_county_lookup) %>%
 ```
 
 
-5. crime rate data
+## 5. crime rate data
 
 ```{r}
 crime_data = read_csv("crime_data_w_population_and_crime_rate.csv")
@@ -253,7 +253,7 @@ crime_data$County[w] = crime_lost$County[1]
 price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
 ```
 
-6. tax rate data
+## 6. tax rate data
 
 ```{r}
 setwd("TAXRATES_ZIP5")
@@ -271,7 +271,7 @@ tax_rate_data = tax_rate_data[!duplicated(tax_rate_data[,1:2]), ]
 Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
 ```
 
-7. gasoline price data
+## 7. gasoline price data
 
 ```{r}
 get_gasoline = function(k){
@@ -286,7 +286,7 @@ price_2017_7 = left_join(Price_2017_6,gasoline_data,by='State')
 
 ```
 
-8. number of colleges
+## 8. number of colleges
 
 ```{r}
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
@@ -309,7 +309,7 @@ price_2017_8 = left_join(price_2017_7, data, by=c('County','State')) %>%
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 ```
 
-9. Traffic data 
+## 9. Traffic data 
 
 ```{r}
 epidata = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
@@ -325,7 +325,7 @@ price_2017_9 =left_join(price_2017_8, epidata,by=c('County','State'))%>%
 
 ```
 
-10. shopping mall data 
+## 10. shopping mall data 
 
 ```{r}
 read_wikitable_flat = function(state,n1,k,n4,n5,l4,l5){
@@ -439,7 +439,7 @@ price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","S
 ```
 
 
-11. Public high school data
+## 11. Public high school data
 
 ```{r}
 public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
@@ -456,7 +456,7 @@ price_2017_11 = left_join(price_2017_10, public_school, by=c('County','State')) 
     mutate(public_school_count = ifelse(is.na(public_school_count), 0, public_school_count))
 ```
 
-12. Private high school data
+## 12. Private high school data
 
 ```{r}
 private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
@@ -472,7 +472,7 @@ price_2017_12 = left_join(price_2017_11, private_school, by=c('County','State'))
 ```
 
 
-13. Hospital data
+## 13. Hospital data
 
 ```{r}
 hospital = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
