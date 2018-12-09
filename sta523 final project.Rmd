@@ -493,5 +493,9 @@ price_2017_13 = left_join(price_2017_12, hospital2, by=c('County','State')) %>%
 ```
 
 
+```{r}
+save(modal_data, file = final.data.RData)
+
+```
 
 
