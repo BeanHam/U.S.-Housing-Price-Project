@@ -472,6 +472,25 @@ price_2017_12 = left_join(price_2017_11, private_school, by=c('County','State'))
 ```
 
 
+13. Hospital data
+
+```{r}
+hospital = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
+    select(Hospital.Name, County.Name, State,Emergency.Services, Hospital.overall.rating ) %>% rename(Name = Hospital.Name, County = County.Name, Emergency= Emergency.Services, rating = Hospital.overall.rating) %>%
+    mutate(County = toTitleCase(tolower(County)),
+           Emergency = as.numeric(Emergency),
+           rating = as.numeric(rating)) %>%
+    group_by(County, State) %>%
+    summarise(num_hospitals = length(County),
+              num_emergency = sum(Emergency),
+              hospital_rating = mean(rating,na.rm = TRUE)) %>%
+    mutate(hospital_rating = ifelse(is.nan(hospital_rating), 0, hospital_rating))
+
+price_2017_13 = left_join(price_2017_12, hospital2, by=c('County','State')) %>%
+    mutate(num_hospitals = ifelse(is.na(num_hospitals), 0, num_hospitals),
+           num_emergency = ifelse(is.na(num_emergency), 0, num_emergency),
+           hospital_rating = ifelse(is.na(hospital_rating), 0, hospital_rating))
+```
 
 
 
