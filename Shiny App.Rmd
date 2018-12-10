@@ -2,24 +2,37 @@
 title: "Shiny App"
 output: html_document
 ---
+```{r}
+suppressMessages(library(shiny))
+suppressMessages(library(shinythemes))
+suppressMessages(library(dplyr))
+suppressMessages(library(tidyverse))
+```
 
 ```{r}
+load("county_data.RData")
+```
+
+
+```{r}
+state_list = unique(county_data$State)
+
 shinyApp(
   ui = tagList(
     themeSelector(),
     navbarPage(
-      "U.S. Housing Price",
-      tabPanel("Article Outlook", 
+      "U.S. County Housing Price",
+      tabPanel("County Outlook", 
         sidebarPanel(
-          textInput("key", "API Key", "f46970af6d534ba78c084b625dc46796"),
-          dateInput("date", label = "Choose a Date", value = "2018-08-16"),
-          actionButton("get_article", "Get Articles"),
-          hr(),
-          h4("Warning: "),
-          helpText("Click 'Get Articles' button once per search! DO NOT click it multiple times!")
+          selectInput("state", "Select A State", choices = state_list, selected = 1),
+          #conditionalPanel(
+          #  condition = "input.state == true",
+          #  selectInput("county", "Select A County", choices =c()),
+          actionButton("update", "Update"),
+          hr()
           ),
         mainPanel(
-          uiOutput("links")
+          DT::dataTableOutput("table1")
           )),
       
       tabPanel("Article Details",
@@ -32,81 +45,15 @@ shinyApp(
   
   server = function(input, output){
     
-    ## Extract data 
-    nyt_articles = eventReactive(
-      input$get_article,
-      {
-        year = as.numeric(substr(input$date, 1,4))
-        month = as.numeric(substr(input$date, 6,7))
-        day = as.numeric(substr(input$date, 9,10))
-        get_nyt_articles(year, month, day, input$key)
-      })
-      
-    ## Set up links
-    state = reactiveValues(
-      observer = list()
-    )
-    
-    observeEvent(nyt_articles(), {
-      n = nrow(nyt_articles())
-       
-      output$table = DT::renderDataTable(DT::datatable({
-        data.frame(
-          Title = nyt_articles()$headline,
-          Author = nyt_articles()$byline,
-          WordCount = nyt_articles()$word_count,
-          Material = nyt_articles()$material,
-          Section = nyt_articles()$section
-        )
-      }))
-       
-      # Destroy existing observers
-      for(i in seq_along(state$observers)) {
-        state$observers[[i]]$destroy()
-      }
-      
-      ui_elems = map(
-        seq_len(n), 
-        function(i) fluidRow(actionButton(paste0("link",i), 
-                                        paste0(nyt_articles()$headline[i])))
-      )
-      output$links = renderUI(fluidPage(ui_elems))
-      
-      # Reset and create new observers for each of our links
-      state$observers = map(
-        seq_len(n), 
-        function(i) {
-          label = paste0("link",i)
-          observeEvent(
-            input[[label]], 
-            { 
-              showModal(modalDialog(
-              title = "Details of the Article",
-              h4(paste0("Title: ")),
-              nyt_articles()$headline[i],
-              br(),
-              br(),
-              h4(paste0("Author: ")),
-              nyt_articles()$byline[i],
-              br(),
-              br(),
-              h4(paste0("Snippet: ")),
-              nyt_articles()$snippet[i],
-              br(),
-              br(),
-              h4("URL: "),
-              a(nyt_articles()$web_url[i], 
-                href = nyt_articles()$web_url[i],
-                target = "_blank"),
-              footer = modalButton("Close")
-              ))
-              }, 
-            ignoreInit = TRUE
-          )
-        }
-      )
+    data = eventReactive(
+      input$update,{
+      county_data %>% filter(State == "ID")
     })
-  }
+    
+    output$table1 = DT::renderDataTable(DT::datatable({
+      data()
+      }))
+    }
 )
 
 ```

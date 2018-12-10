@@ -495,7 +495,8 @@ price_2017_13 = left_join(price_2017_12, hospital, by=c('County','State')) %>%
 
 
 ```{r}
-save(price_2017_13, file = "county_data.RData")
+county_data = price_2017_13
+save(county_data, file = "county_data.RData")
 ```
 
 
