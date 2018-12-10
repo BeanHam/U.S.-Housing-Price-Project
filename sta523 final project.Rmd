@@ -9,6 +9,63 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
+I. Introduction 
+
+For this project, we want to analyze the average housing prices across different counties in the United States. Nowadays, more people begin to immigrate to the United States, including some of our friends. They move to different counties acrossing the country and brought their own houses. However, the price of their houses acting so differently acrossing each counties. 
+
+Therefore, we are curious about the factors that will affect the price of the houses and we want to analyze the housing prices with different variables trying to find out the reasons behind that phenomenom. We also want to do some data visualizations to present a more clear picture to our audience about the distributions of housing price across different states and some time series housing price plots for some major counties. 
+
+
+II. Project goals and the outlines 
+
+1. To make an acurrate model that can predict the housing price with variables given.
+
+2. Finding out the factors that may potentially affect the price of the houses. 
+
+3. Data visualizations on housing price distributions and housing trends.
+
+4. Built UI dashboard (Shiny) to visualize data and deliver data insight to audiences including plots & tables
+
+
+III. Selecting the variables 
+
+We use two methods to choose the variables that we want to scrape:
+
+1. Focus group research
+
+We conduct a survey to reach out our friends and our parents' friends who recently brought the houses in the United States or who planned to buy the houses in the United States. We ask them the factors that they thought are most important when they are planning to buy a house. We summarized these top factors into the potential variables pool one. 
+
+2. Research Paper 
+
+We read the research paper written by other people to learn which factors they may think are important to the price of houses. Some of the reseach paper from the economic department are very valuable to us because these authors conducted very comprehensive surveys and complicated models to conclude the major factors driving the price of the houses. So we summarized these factors into the potential variables pool two.
+
+Surprisingly, we discovered that some factors appear in both potential variables pool one and pool two. So we decide to use these variables for our analyze. 
+
+
+IV. Scraping the data and clean the data sets.
+
+The final variables we want to include are population data, hotel data, safety data, tax rate data, gasoline price data, college data, high school data, Traffic data, shopping mall(convinience) data and Hospital data. Since the time is limited otherwise there may be some few other data that we want to include. 
+
+We find these data sources and scrape these data down using various methods. After that we clean the dataset to make sure it's tidy and can get prepared for the final modelling. We also simplified our codes to make sure it's clear and elegant. Finally, we combined all these data into one single dataframe which will be used for the final modelling and visualizations. 
+
+
+V. Data checkings 
+
+We do the final checks before we start to build the models. We draw some scatter plots and box plots for our varaibles, checking for any anomalies or NA values. Looking for potential outliers, etc. The final preparation stage before the modelling.
+
+
+VI. Modelling 
+
+
+VII. Visualizations 
+
+
+VIII. User Interface (Shiny)
+
+
+VIIII Conclusion. 
+
+
 ```{r, warning = F, message = F, output = F}
 library(Quandl)
 library(readr)
