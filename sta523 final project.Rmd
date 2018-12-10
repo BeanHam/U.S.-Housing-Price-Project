@@ -29,66 +29,16 @@ library(tools)
 ## 1. base data
 
 ```{r message=FALSE, warning=FALSE}
-### old ###
-pricepersqft = read_csv("pricepersqft__.csv")
-
-county_count = pricepersqft %>% dplyr::select(County,State) %>% 
-  group_by(County,State) %>% summarize(count = length(County))
-
-price_2017 = pricepersqft %>% 
-  dplyr::select(County,State, `17-Jan`) %>%
-  group_by(County,State) %>% 
-  summarize(price = median(`17-Jan`))
-### new ###
-price_2017 = read_csv("pricepersqft__.csv") %>%
+price_2017 = read_csv("pricepersqft.csv") %>%
   select(County,State, `17-Jan`) %>%
   group_by(County,State) %>%
   summarize(price = median(`17-Jan`))
-### comments ###
-# county_count is never used???
-### end ###
 ```
 
 
 ## 2. Population data from wikipedia
 
 ```{r message=FALSE, warning=FALSE}
-### old ###
-url <- "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income"
-
-df = read_html(url) %>%
-  html_nodes("table.wikitable.sortable") %>%
-  .[[1]] %>%
-  html_table() %>% 
-  filter(.$State != "")
-
-county_data <- data.frame(
-  County = df$`County-equivalent` %>% as.character(.),
-  State = df$State %>% as.character(.),
-  Income_PerCapita = df$`Per capitaincome` %>% 
-    str_replace_all(",", "") %>%
-    substr(2, 10000) %>% 
-    as.numeric(as.character(.)),
-  Median_Household_Income = df$Medianhouseholdincome %>% 
-    str_replace_all(",", "") %>%
-    substr(2, 10000) %>% 
-    as.numeric(as.character(.)),
-  Median_Family_Income = df$Medianfamilyincome %>% 
-    str_replace_all(",", "") %>%
-    substr(2, 10000) %>% 
-    as.numeric(as.character(.)),
-  Population = df$Population %>% 
-    str_replace_all(",", "") %>% 
-    as.numeric(as.character(.)),
-  Num_Household = df$`Number ofhouseholds` %>% 
-    str_replace_all(",", "") %>% 
-    as.numeric(as.character(.))
-)
-
-county_data$State = state.abb[match(county_data$State,state.name)]
-
-difficult_county = price_2017[price_2017$County %ni% county_data$County,]
-### new ###
 county_data = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income" %>%
   read_html() %>%
   html_nodes("table.wikitable.sortable") %>%
@@ -103,39 +53,7 @@ county_data = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_p
             Median_Family_Income = as.numeric(Medianfamilyincome),
             Population = as.numeric(Population),
             Num_Household = as.numeric(`Number ofhouseholds`))
-
-difficult_county = price_2017[price_2017$County %ni% county_data$County,]
-### comments ###
-# 2 missing values: row 23 and 497, because when downloading from wiki, these two states are District of Columbia, United States
-### end ###
-```
-
-```{r message=FALSE, warning=FALSE}
-w = which(price_2017$County == difficult_county$County[1])
-
-price_2017[w[1]:w[length(w)], 1] = 'Delaware County'
-
-w = which(price_2017$County == difficult_county$County[8])
-ww = which(price_2017$County == difficult_county$County[25])
-
-price_2017[w[1]:ww, 1] = w[1]:ww %>% sapply(function(i){
-     paste0('St.',substr(price_2017[i,1],6,100))})
-
-w = which(price_2017$County == difficult_county$County[26])
-price_2017[w[1]:w[length(w)], 1] = 'Washington County'
-
-difficult_county = price_2017[price_2017$County %ni% county_data$County,]
-
-w = which(price_2017$County == difficult_county$County[3])
-price_2017[w[1]:w[length(w)], 1] = 'St. Louis County'
-
-w = which(price_2017$County == difficult_county$County[5])
-price_2017[w[1]:w[length(w)], 1] = "St. Mary's"
-
 price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
-### comments ###
-# this part involves serious hardcoding. a solution is to change excel directly. we'll see how to simplify this part after changing excel.
-### end ###
 ```
 
 ## 3. hilton data within the country
@@ -144,7 +62,6 @@ price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
 baseURL =  "https://www3.hilton.com"
 links = read_html("https://www3.hilton.com/en/hotel-locations/us/index.html") %>%
     html_nodes(.,'ul.directory_locations_list li a') 
-### states = html_text(links) ??? never used???
 urls = html_attr(links, "href") %>% paste0(baseURL, .)
 
 zips = sapply(urls, function(url){
@@ -196,99 +113,20 @@ price_2017_3 = left_join(price_2017_2, distinct_count, by = c("County"="COUNTYNA
 ## 4. clean the dataset 
 
 ```{r message=FALSE, warning=FALSE}
-### old ###
-clean_county = function(df){
-df$County = strsplit(df$County, " ")
- n = dim(df)[1]
-for (i in 1:n){
-  if (length(df$County[[i]])>1){
-    if (df$County[[i]][length(df$County[[i]])] == 'County' 
-    | df$County[[i]][length(df$County[[i]])] == 'Borough'  
-    |df$County[[i]][length(df$County[[i]])] == 'Parish'
-    |df$County[[i]][length(df$County[[i]])] ==
-    'Municipality'
-    |df$County[[i]][length(df$County[[i]])] == 'Municipio'
-    |df$County[[i]][length(df$County[[i]])] == 'Island'
-    |df$County[[i]][length(df$County[[i]])] == 'County,' 
-    |df$County[[i]][length(df$County[[i]])] == 'Borough,'  
-    |df$County[[i]][length(df$County[[i]])] == 'Parish,'
-    |df$County[[i]][length(df$County[[i]])] ==
-    'Municipality,'
-    |df$County[[i]][length(df$County[[i]])] == 'Municipio,'
-    |df$County[[i]][length(df$County[[i]])] == 'Island,')
-    {df$County[[i]] = df$County[[i]][-length(df$County[[i]])]}
-      
-    if (df$County[[i]][length(df$County[[i]])] == 'city' 
-    | df$County[[i]][length(df$County[[i]])] == 'City'
-    | df$County[[i]][length(df$County[[i]])] == 'city,' 
-    | df$County[[i]][length(df$County[[i]])] == 'City,')
-    {df$County[[i]][length(df$County[[i]])] = 'City'}}
-}
-for (i in 1:n){
-  if (length(df$County[[i]]) == 2){
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2])}
-  if (length(df$County[[i]]) == 3) {
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3])}
-  if (length(df$County[[i]]) == 4) {
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3],df$County[[i]][4])}
-  if (length(df$County[[i]]) == 5) {
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3],df$County[[i]][4],df$County[[i]][5])}
-}
- df$County = unlist(df$County)
- return(df)
-}
-
-bind = function(df){
-  n = dim(df)[1]
-  for (i in 1:n){
-  if (length(df$County[[i]]) == 2){
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2])}
-  if (length(df$County[[i]]) == 3) {
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3])}
-  if (length(df$County[[i]]) == 4) {
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3],df$County[[i]][4])}
-  if (length(df$County[[i]]) == 5) {
-    df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2],df$County[[i]][3],df$County[[i]][4],df$County[[i]][5])}
-}
- df$County = unlist(df$County)
- return(df)
-}
-### new ###
 clean_county = function(df){
   df %>%
     mutate(County = str_replace(County, " County,*$| Borough,*$| Parish,*$| Municipality,*$| Municipio,*$| Island,*$", "") %>%
              str_replace(" [cC]ity,*$", " City"))
 }
-### comments ###
-# no need for bind function after simplifying code
-### end ###
 
-```
-
-```{r message=FALSE, warning=FALSE}
 price_2017_4 = clean_county(price_2017_3) 
 zip_county_lookup = clean_county(zip_county_lookup) %>%
   select(ZIP,STATE,County,CITY)
 ```
 
-
 ## 5. crime rate data
 
 ```{r message=FALSE, warning=FALSE}
-### old ###
-crime_data = read_csv("crime_data_w_population_and_crime_rate.csv")
-crime_data = crime_data %>%
-  select(county_name,crime_rate_per_100000,IDNO,CPOPCRIM,CPOPARST,COVIND,MURDER,RAPE,ROBBERY,AGASSLT,BURGLRY,LARCENY,MVTHEFT,ARSON)
-
-crime_data$county_name = strsplit(crime_data$county_name, " ") 
-crime_data$State = NA
-colnames(crime_data)[1] = "County"
-for (i in 1:dim(crime_data)[1]){
-  crime_data$State[i] = crime_data$County[[i]][length(crime_data$County[[i]])]
-  crime_data$County[[i]] = crime_data$County[[i]][-length(crime_data$County[[i]])]}
-
-crime_data = crime_data %>% bind() %>% clean_county()
-### new ###
 crime_data = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
   select(county_name, crime_rate_per_100000, IDNO, CPOPCRIM, CPOPARST, COVIND,
          MURDER, RAPE, ROBBERY, AGASSLT, BURGLRY, LARCENY, MVTHEFT, ARSON) %>%
@@ -298,7 +136,7 @@ crime_data = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
          County = County %>% sapply(head, -1) %>% 
            sapply(function(v) {do.call(paste, as.list(v))})) %>%
   clean_county()
-### end ###
+
 price_2017_5 = merge(price_2017_4,crime_data,by=c('County','State'))
 
 crime_lost = price_2017_4[price_2017_4$County %ni% price_2017_5$County,]
@@ -312,29 +150,15 @@ price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
 ```{r message=FALSE, warning=FALSE}
 setwd("TAXRATES_ZIP5")
 
-### old ###
-filenames = list.files(pattern = "*.csv")
-tax_rate_data = read.csv(filenames[1])
-for(i in 2:length(filenames)){
-  temp = read.csv(filenames[i])
-  tax_rate_data = rbind(tax_rate_data, temp)
-}
-tax_rate_data = left_join(tax_rate_data,zip_county_lookup,by=c("ZipCode"="ZIP"))
-
-tax_rate_data = tax_rate_data %>% select(County,State,StateRate,EstimatedCombinedRate,EstimatedCountyRate,EstimatedCityRate,EstimatedSpecialRate,RiskLevel)
-
-tax_rate_data = tax_rate_data[!duplicated(tax_rate_data[,1:2]), ]
-Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
-### new ###
-tax_rate_data2 = list.files(pattern = "*.csv") %>%
+tax_rate_data = list.files(pattern = "*.csv") %>%
   map(read.csv) %>%
   {do.call(bind_rows, .)} %>%
   left_join(zip_county_lookup,by=c("ZipCode"="ZIP")) %>%
   select(County, State, StateRate, EstimatedCombinedRate, EstimatedCountyRate,
          EstimatedCityRate, EstimatedSpecialRate, RiskLevel) %>%
-  {.[!duplicated(.[,1:2]), ]} %>%
-  {left_join(price_2017_5, ., by = c('County','State'))}
-### end ###
+  {.[!duplicated(.[,1:2]), ]}
+
+Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
 ```
 
 ## 7. gasoline price data
