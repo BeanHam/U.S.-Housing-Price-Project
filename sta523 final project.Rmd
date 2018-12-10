@@ -133,7 +133,9 @@ w = which(price_2017$County == difficult_county$County[5])
 price_2017[w[1]:w[length(w)], 1] = "St. Mary's"
 
 price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
-
+### comments ###
+# this part involves serious hardcoding. a solution is to change excel directly. we'll see how to simplify this part after changing excel.
+### end ###
 ```
 
 ## 3. hilton data within the country
