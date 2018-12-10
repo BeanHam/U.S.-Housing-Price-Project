@@ -256,7 +256,8 @@ get_gasoline = function(k){
 }
 
 web = read_html("https://gasprices.aaa.com/state-gas-price-averages/")
-gasoline_data = data.frame(State=get_gasoline(1), Regular=get_gasoline(2), MidGrade=get_gasoline(3), Premium=get_gasoline(4), Diesel=get_gasoline(5))
+gasoline_data = data.frame(State=get_gasoline(1), Regular=get_gasoline(2), MidGrade=get_gasoline(3), Premium=get_gasoline(4), Diesel=get_gasoline(5)) %>% lapply(., gsub, pattern="\\$", replacement="") %>% 
+    as.data.frame() 
 
 gasoline_data$State = state.abb[match(gasoline_data$State,state.name)]
 price_2017_7 = left_join(Price_2017_6,gasoline_data,by='State')
