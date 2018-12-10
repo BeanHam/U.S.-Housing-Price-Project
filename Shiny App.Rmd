@@ -92,7 +92,3 @@ shinyApp(
 ```
 
 
-```{r}
-test=urbnmapr::counties
-```
-
