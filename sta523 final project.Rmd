@@ -258,7 +258,7 @@ clean_county = function(df){
              str_replace(" [cC]ity,*$", " City"))
 }
 ### comments ###
-# probably won't be needing bind function.
+# no need for bind function after simplifying code
 ### end ###
 
 ```
@@ -284,6 +284,8 @@ colnames(crime_data)[1] = "County"
 for (i in 1:dim(crime_data)[1]){
   crime_data$State[i] = crime_data$County[[i]][length(crime_data$County[[i]])]
   crime_data$County[[i]] = crime_data$County[[i]][-length(crime_data$County[[i]])]}
+
+crime_data = crime_data %>% bind() %>% clean_county()
 ### new ###
 crime_data = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
   select(county_name, crime_rate_per_100000, IDNO, CPOPCRIM, CPOPARST, COVIND,
@@ -291,10 +293,10 @@ crime_data = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
   mutate(county_name = strsplit(county_name, " ")) %>%
   rename(County = county_name) %>%
   mutate(State = County %>% sapply(last),
-         County = County %>% sapply(head, -1))
+         County = County %>% sapply(head, -1) %>% 
+           sapply(function(v) {do.call(paste, as.list(v))})) %>%
+  clean_county()
 ### end ###
-
-crime_data = crime_data %>% bind() %>% clean_county()
 price_2017_5 = merge(price_2017_4,crime_data,by=c('County','State'))
 
 crime_lost = price_2017_4[price_2017_4$County %ni% price_2017_5$County,]
