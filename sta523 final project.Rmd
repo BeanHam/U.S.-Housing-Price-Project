@@ -142,7 +142,7 @@ price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
 baseURL =  "https://www3.hilton.com"
 links = read_html("https://www3.hilton.com/en/hotel-locations/us/index.html") %>%
     html_nodes(.,'ul.directory_locations_list li a') 
-states = html_text(links)
+### states = html_text(links) ??? never used???
 urls = html_attr(links, "href") %>% paste0(baseURL, .)
 
 zips = sapply(urls, function(url){
@@ -194,6 +194,7 @@ price_2017_3 = left_join(price_2017_2, distinct_count, by = c("County"="COUNTYNA
 ## 4. clean the dataset 
 
 ```{r message=FALSE, warning=FALSE}
+### old ###
 clean_county = function(df){
 df$County = strsplit(df$County, " ")
  n = dim(df)[1]
@@ -250,12 +251,22 @@ bind = function(df){
  df$County = unlist(df$County)
  return(df)
 }
+### new ###
+clean_county = function(df){
+  df %>%
+    mutate(County = str_replace(County, " County,*$| Borough,*$| Parish,*$| Municipality,*$| Municipio,*$| Island,*$", "") %>%
+             str_replace(" [cC]ity,*$", " City"))
+}
+### comments ###
+# probably won't be needing bind function.
+### end ###
+
 ```
 
 ```{r message=FALSE, warning=FALSE}
 price_2017_4 = clean_county(price_2017_3) 
 zip_county_lookup = clean_county(zip_county_lookup) %>%
-  dplyr::select(ZIP,STATE,County,CITY)
+  select(ZIP,STATE,County,CITY)
 ```
 
 
