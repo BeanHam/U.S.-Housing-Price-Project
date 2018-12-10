@@ -27,7 +27,7 @@ library(tools)
 
 ## 1. base data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 pricepersqft = read_csv("pricepersqft__.csv")
 
 county_count = pricepersqft %>% dplyr::select(County,State) %>% 
@@ -42,7 +42,7 @@ price_2017 = pricepersqft %>%
 
 ## 2. Population data from wikipedia
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 url <- "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income"
 
 df = read_html(url) %>%
@@ -82,7 +82,7 @@ county_data$State = state.abb[match(county_data$State,state.name)]
 difficult_county = price_2017[price_2017$County %ni% county_data$County,]
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 w = which(price_2017$County == difficult_county$County[1])
 w[length(w)]
 price_2017[w[1]:w[length(w)], 1] = 'Delaware County'
@@ -110,7 +110,7 @@ price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
 
 ## 3. hilton data within the country
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 baseURL =  "https://www3.hilton.com"
 links = read_html("https://www3.hilton.com/en/hotel-locations/us/index.html") %>%
     html_nodes(.,'ul.directory_locations_list li a') 
@@ -141,7 +141,7 @@ zips = sapply(urls, function(url){
 colnames(zips) = "zips"
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv") %>%
     mutate(County = COUNTYNAME)
 
@@ -165,7 +165,7 @@ price_2017_3 = left_join(price_2017_2, distinct_count, by = c("County"="COUNTYNA
 
 ## 4. clean the dataset 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 clean_county = function(df){
 df$County = strsplit(df$County, " ")
  n = dim(df)[1]
@@ -208,6 +208,7 @@ for (i in 1:n){
 }
 
 bind = function(df){
+  n = dim(df)[1]
   for (i in 1:n){
   if (length(df$County[[i]]) == 2){
     df$County[[i]] = paste(df$County[[i]][1],df$County[[i]][2])}
@@ -223,7 +224,7 @@ bind = function(df){
 }
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 price_2017_4 = clean_county(price_2017_3) 
 zip_county_lookup = clean_county(zip_county_lookup) %>%
   dplyr::select(ZIP,STATE,County,CITY)
@@ -232,7 +233,7 @@ zip_county_lookup = clean_county(zip_county_lookup) %>%
 
 ## 5. crime rate data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 crime_data = read_csv("crime_data_w_population_and_crime_rate.csv")
 crime_data = crime_data %>%
   select(county_name,crime_rate_per_100000,IDNO,CPOPCRIM,CPOPARST,COVIND,MURDER,RAPE,ROBBERY,AGASSLT,BURGLRY,LARCENY,MVTHEFT,ARSON)
@@ -255,7 +256,7 @@ price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
 
 ## 6. tax rate data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 setwd("TAXRATES_ZIP5")
 filenames = list.files(pattern = "*.csv")
 tax_rate_data = read.csv(filenames[1])
@@ -273,7 +274,7 @@ Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
 
 ## 7. gasoline price data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 get_gasoline = function(k){
     dat = trimws(html_text(html_nodes(web, paste0("td:nth-child(",k,")"))))
 }
@@ -288,7 +289,7 @@ price_2017_7 = left_join(Price_2017_6,gasoline_data,by='State')
 
 ## 8. number of colleges
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
 
 schools = read_html("IPEDS Data Center.html") %>%
@@ -305,13 +306,13 @@ school_data = left_join(schools,cities, by=c('City','State'))%>%
     group_by(County, State) %>%
     summarise(college_num = n()) 
 
-price_2017_8 = left_join(price_2017_7, data, by=c('County','State')) %>%
+price_2017_8 = left_join(price_2017_7, school_data, by=c('County','State')) %>%
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 ```
 
 ## 9. Traffic data 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 epidata = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
   select(county_name,state,hwyprop,ryprop,
          pct_pub_transport_log,fatal_rate_log,
@@ -327,7 +328,7 @@ price_2017_9 =left_join(price_2017_8, epidata,by=c('County','State'))%>%
 
 ## 10. shopping mall data 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 read_wikitable_flat = function(state,n1,k,n4,n5,l4,l5){
     l1 = n1+1
     url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_",state)
@@ -425,7 +426,7 @@ shopping_mall_data = bind_cols(shopping_mall_data_clean,shopping_mall_data) %>%
     rename(City = location, State = STATE)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 shopping_mall_data$City = tolower(shopping_mall_data$City) %>% str_trim(.,"left")
 cities$City = tolower(cities$City)
 
@@ -441,7 +442,7 @@ price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","S
 
 ## 11. Public high school data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
     select(1, 2, 4) %>%
     rename(State = County.Name, County = County.Name..Public.School..2015.16, public_school_num = Total.Number.of.Public.Schools..Public.School..2015.16) %>%
@@ -458,7 +459,7 @@ price_2017_11 = left_join(price_2017_10, public_school, by=c('County','State')) 
 
 ## 12. Private high school data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
     select(2, 5) %>% 
     rename(State = State.Name..Private.School..Latest.available.year, County = County.Name..Private.School..2015.16) %>% 
@@ -474,7 +475,7 @@ price_2017_12 = left_join(price_2017_11, private_school, by=c('County','State'))
 
 ## 13. Hospital data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 hospital = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
     select(Hospital.Name, County.Name, State,Emergency.Services, Hospital.overall.rating ) %>% rename(Name = Hospital.Name, County = County.Name, Emergency= Emergency.Services, rating = Hospital.overall.rating) %>%
     mutate(County = toTitleCase(tolower(County)),
@@ -486,7 +487,7 @@ hospital = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
               hospital_rating = mean(rating,na.rm = TRUE)) %>%
     mutate(hospital_rating = ifelse(is.nan(hospital_rating), 0, hospital_rating))
 
-price_2017_13 = left_join(price_2017_12, hospital2, by=c('County','State')) %>%
+price_2017_13 = left_join(price_2017_12, hospital, by=c('County','State')) %>%
     mutate(num_hospitals = ifelse(is.na(num_hospitals), 0, num_hospitals),
            num_emergency = ifelse(is.na(num_emergency), 0, num_emergency),
            hospital_rating = ifelse(is.na(hospital_rating), 0, hospital_rating))
@@ -494,8 +495,7 @@ price_2017_13 = left_join(price_2017_12, hospital2, by=c('County','State')) %>%
 
 
 ```{r}
-save(modal_data, file = final.data.RData)
-
+save(price_2017_13, file = "county_data.RData")
 ```
 
 
