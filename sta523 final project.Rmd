@@ -63,7 +63,10 @@ VII. Visualizations
 VIII. User Interface (Shiny)
 
 
-VIIII Conclusion. 
+VIIII. Housing Recommendations 
+
+
+Ten.  Conclusion. 
 
 
 ```{r, warning = F, message = F, output = F}
