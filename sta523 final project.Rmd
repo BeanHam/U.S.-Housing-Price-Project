@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
-```{r}
+```{r, warning = F, message = F, output = F}
 library(Quandl)
 library(readr)
 library(dplyr)
@@ -23,6 +23,7 @@ library(sqldf)
 library(stringi)
 library(readxl)
 library(tools)
+'%ni%' <- Negate('%in%')
 ```
 
 ## 1. base data
@@ -52,6 +53,7 @@ price_2017 = read_csv("pricepersqft__.csv") %>%
 ## 2. Population data from wikipedia
 
 ```{r message=FALSE, warning=FALSE}
+### old ###
 url <- "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income"
 
 df = read_html(url) %>%
@@ -59,7 +61,6 @@ df = read_html(url) %>%
   .[[1]] %>%
   html_table() %>% 
   filter(.$State != "")
-
 
 county_data <- data.frame(
   County = df$`County-equivalent` %>% as.character(.),
@@ -86,14 +87,32 @@ county_data <- data.frame(
 
 county_data$State = state.abb[match(county_data$State,state.name)]
 
-'%ni%' <- Negate('%in%')
+difficult_county = price_2017[price_2017$County %ni% county_data$County,]
+### new ###
+county_data = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income" %>%
+  read_html() %>%
+  html_nodes("table.wikitable.sortable") %>%
+  {.[[1]]} %>%
+  html_table() %>%
+  filter(State != "") %>%
+  mutate_all(funs(str_replace_all(., "[\\$,]", ""))) %>%
+  transmute(County = `County-equivalent`,
+            State = state.abb[match(State, state.name)],
+            Income_PerCapita = as.numeric(`Per capitaincome`),
+            Median_Household_Income = as.numeric(Medianhouseholdincome),
+            Median_Family_Income = as.numeric(Medianfamilyincome),
+            Population = as.numeric(Population),
+            Num_Household = as.numeric(`Number ofhouseholds`))
 
 difficult_county = price_2017[price_2017$County %ni% county_data$County,]
+### comments ###
+# 2 missing values: row 23 and 497, because when downloading from wiki, these two states are District of Columbia, United States
+### end ###
 ```
 
 ```{r message=FALSE, warning=FALSE}
 w = which(price_2017$County == difficult_county$County[1])
-w[length(w)]
+
 price_2017[w[1]:w[length(w)], 1] = 'Delaware County'
 
 w = which(price_2017$County == difficult_county$County[8])
