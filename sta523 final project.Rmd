@@ -128,7 +128,16 @@ county_data = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_p
 price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
 ```
 
+
 ## 3. hilton data within the country
+
+For this dataset, we want to get the numbers of Hilton in each counties. Actually the data we want to get is the hotel data, because we think that whether there's a large hotel inside the county can implies whether that's prosperous county. Often a prosperous county indicates high median housing price because more people are tend to live there. Therefore, we scrape the hilton data from the hilton website.
+
+Just as we did in the homework, we first get all Urls for different hiltons acrossing the country and within these urls, we scrape the location of each hotels. However, we dont need the whole location because that's useless for us. We only need to know which counties it belongs. 
+
+Therefore, we only need the zipcode within the location to match the hotel to the county. So we manipulate the location with several stringr functions such as str_replace, strsplit, substr to only get all ziocodes for all hiltons in the United States. 
+
+Since We avoid the for loop we largely reduce the running time of scraping that data. But because we need to scrape so many websites within that single chunck so it may cause some time to run this chunk (but much shorter than we spent the time in our Denny's homework).  
 
 ```{r message=FALSE, warning=FALSE}
 baseURL =  "https://www3.hilton.com"
@@ -159,6 +168,12 @@ zips = sapply(urls, function(url){
     as.data.frame() 
 colnames(zips) = "zips"
 ```
+
+And the next step for us is to match the zipcodes to the counties. So we find a dataset online which contains all zipcodes, cities, counties, states data in the United States. This dataset is very important to us and we use a lot in our next few chuncks because it not only can match the zipcodes to the county but can also match the cities to counties.
+
+So after we match the zipcodes with the corrsponding counties, there may be some counties which have more than 1 hilton in it. Therefore, we need to group by the counties and summarize the sum of hilton numbers within that counties. 
+
+The final hilton data we merge into the base dataset is the number of hiltons within each counties. And we replace all NA with 0s. 
 
 ```{r message=FALSE, warning=FALSE}
 zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv") %>%
