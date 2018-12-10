@@ -44,7 +44,7 @@ Surprisingly, we discovered that some factors appear in both potential variables
 
 IV. Scraping the data and clean the data sets.
 
-The final variables we want to include are population data, hotel data, safety data, tax rate data, gasoline price data, college data, high school data, Traffic data, shopping mall(convinience) data and Hospital data. Since the time is limited otherwise there may be some few other data that we want to include. 
+The final variables we want to include are population data, income data, hotel data, safety data, tax rate data, gasoline price data, college data, high school data, Traffic data, shopping mall(convinience) data and Hospital data. Since the time is limited otherwise there may be some few other data that we want to include. 
 
 We find these data sources and scrape these data down using various methods. After that we clean the dataset to make sure it's tidy and can get prepared for the final modelling. We also simplified our codes to make sure it's clear and elegant. Finally, we combined all these data into one single dataframe which will be used for the final modelling and visualizations. 
 
@@ -88,6 +88,12 @@ library(tools)
 
 ## 1. base data
 
+The base data, which is the housing price data across different counties is the base data we use for this project. 
+
+This dataset contains the time series data about the housing price starting from 2013 to 2017. However, we only need the median housing price for each counties in Jan 2017 for the analyze. 
+
+Because of that, the variables we scrape later also are data presented in 2017.
+
 ```{r message=FALSE, warning=FALSE}
 price_2017 = read_csv("pricepersqft.csv") %>%
   select(County,State, `17-Jan`) %>%
@@ -97,6 +103,12 @@ price_2017 = read_csv("pricepersqft.csv") %>%
 
 
 ## 2. Population data from wikipedia
+
+This dataset contains the variables: Population, Per capita income, Median Household income, Median family income, and Numberof Households across each counties. The dataset is stored in Wikipedia. 
+
+So we use the method we have learned from the class and the previous homework (read_html) to scrape this dataset down from the wikipedia. The data is stored in the wikitable so the html_nodes is "table.wikitable.sortable" and we only want the data in the first list so we use .[[1]]
+
+At last we clean the data by filtering all empty values and replace all . with "". We cleaned the variable names and the variable classes and finally bind that tidy population dataset with our previous base dataset.
 
 ```{r message=FALSE, warning=FALSE}
 county_data = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income" %>%
