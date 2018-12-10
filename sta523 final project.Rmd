@@ -234,6 +234,7 @@ zip_county_lookup = clean_county(zip_county_lookup) %>%
 ## 5. crime rate data
 
 ```{r message=FALSE, warning=FALSE}
+### old ###
 crime_data = read_csv("crime_data_w_population_and_crime_rate.csv")
 crime_data = crime_data %>%
   select(county_name,crime_rate_per_100000,IDNO,CPOPCRIM,CPOPARST,COVIND,MURDER,RAPE,ROBBERY,AGASSLT,BURGLRY,LARCENY,MVTHEFT,ARSON)
@@ -244,6 +245,15 @@ colnames(crime_data)[1] = "County"
 for (i in 1:dim(crime_data)[1]){
   crime_data$State[i] = crime_data$County[[i]][length(crime_data$County[[i]])]
   crime_data$County[[i]] = crime_data$County[[i]][-length(crime_data$County[[i]])]}
+### new ###
+crime_data = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
+  select(county_name, crime_rate_per_100000, IDNO, CPOPCRIM, CPOPARST, COVIND,
+         MURDER, RAPE, ROBBERY, AGASSLT, BURGLRY, LARCENY, MVTHEFT, ARSON) %>%
+  mutate(county_name = strsplit(county_name, " ")) %>%
+  rename(County = county_name) %>%
+  mutate(State = County %>% sapply(last),
+         County = County %>% sapply(head, -1))
+### end ###
 
 crime_data = crime_data %>% bind() %>% clean_county()
 price_2017_5 = merge(price_2017_4,crime_data,by=c('County','State'))
@@ -258,6 +268,8 @@ price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
 
 ```{r message=FALSE, warning=FALSE}
 setwd("TAXRATES_ZIP5")
+
+### old ###
 filenames = list.files(pattern = "*.csv")
 tax_rate_data = read.csv(filenames[1])
 for(i in 2:length(filenames)){
@@ -270,6 +282,16 @@ tax_rate_data = tax_rate_data %>% select(County,State,StateRate,EstimatedCombine
 
 tax_rate_data = tax_rate_data[!duplicated(tax_rate_data[,1:2]), ]
 Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
+### new ###
+tax_rate_data2 = list.files(pattern = "*.csv") %>%
+  map(read.csv) %>%
+  {do.call(bind_rows, .)} %>%
+  left_join(zip_county_lookup,by=c("ZipCode"="ZIP")) %>%
+  select(County, State, StateRate, EstimatedCombinedRate, EstimatedCountyRate,
+         EstimatedCityRate, EstimatedSpecialRate, RiskLevel) %>%
+  {.[!duplicated(.[,1:2]), ]} %>%
+  {left_join(price_2017_5, ., by = c('County','State'))}
+### end ###
 ```
 
 ## 7. gasoline price data
