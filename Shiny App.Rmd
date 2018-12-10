@@ -3,10 +3,12 @@ title: "Shiny App"
 output: html_document
 ---
 ```{r}
+#devtools::install_github("UrbanInstitute/urbnmapr")
 suppressMessages(library(shiny))
 suppressMessages(library(shinythemes))
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyverse))
+suppressMessages(library(urbnmapr))
 ```
 
 ```{r}
@@ -15,8 +17,12 @@ load("county_data.RData")
 
 
 ```{r}
+county_plot=urbnmapr::counties %>% 
+    rename(State=state_abbv,County=county_name) %>% 
+    mutate(County=str_replace_all(County,"County","") %>% 
+           str_trim(side = "both"))
 state_list = unique(county_data$State)
-
+variable_list = c("County","State","price","Income_PerCapita","crime_rate_per_100000","college_num","hospital_rating","num_shoppingmall","pct_unemp","RiskLevel","fatal_rate_log")
 shinyApp(
   ui = tagList(
     themeSelector(),
@@ -28,32 +34,65 @@ shinyApp(
           #conditionalPanel(
           #  condition = "input.state == true",
           #  selectInput("county", "Select A County", choices =c()),
+          checkboxGroupInput("variable","Select variables to view",variable_list),
           actionButton("update", "Update"),
           hr()
           ),
         mainPanel(
           DT::dataTableOutput("table1")
           )),
-      
-      tabPanel("Article Details",
+      tabPanel("Map View", 
+        sidebarPanel(
+          selectInput("feature", "Select A Plot Feature", 
+                      choices =c("price","Income_PerCapita"), selected = 1),
+          actionButton("plot", "Plot"),
+          hr()
+          ),
         mainPanel(
-          DT::dataTableOutput("table")
-          )
-        )
+          plotOutput("plot1")
+          ))
+    
+      
       )
     ),
   
   server = function(input, output){
-    
-    data = eventReactive(
+   ## panel1 
+    tabledata = eventReactive(
       input$update,{
-      county_data %>% filter(State == "ID")
+      county_data %>% filter(State == input$state) %>% select(input$variable)
     })
     
     output$table1 = DT::renderDataTable(DT::datatable({
-      data()
+      tabledata()
       }))
+  
+      ## panel 2
+      plotdata = eventReactive(
+      input$plot,{
+      county_data  %>% select(input$feature,State,County) %>% 
+              left_join(.,county_plot,by=c("State","County"))
+    })
+    
+    output$plot1 = renderPlot({
+    plotdata() %>%
+    ggplot(aes(x=long, y=lat, group = group, fill = price)) +
+    geom_polygon(color = NA) +
+        geom_polygon(data = urbnmapr::states, mapping = aes(long, lat, group = group),
+        fill = NA, color = "#ffffff") +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+    theme(legend.title = element_text(),
+        legend.key.width = unit(.5, "in"))+
+    labs(fill = "price") 
+
+    })
     }
 )
 
 ```
+
+
+```{r}
+test=urbnmapr::counties
+```
+
