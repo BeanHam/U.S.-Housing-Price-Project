@@ -28,6 +28,7 @@ library(tools)
 ## 1. base data
 
 ```{r message=FALSE, warning=FALSE}
+### old ###
 pricepersqft = read_csv("pricepersqft__.csv")
 
 county_count = pricepersqft %>% dplyr::select(County,State) %>% 
@@ -37,6 +38,14 @@ price_2017 = pricepersqft %>%
   dplyr::select(County,State, `17-Jan`) %>%
   group_by(County,State) %>% 
   summarize(price = median(`17-Jan`))
+### new ###
+price_2017 = read_csv("pricepersqft__.csv") %>%
+  select(County,State, `17-Jan`) %>%
+  group_by(County,State) %>%
+  summarize(price = median(`17-Jan`))
+### comments ###
+# county_count is never used???
+### end ###
 ```
 
 
