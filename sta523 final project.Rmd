@@ -296,6 +296,12 @@ price_2017_7 = left_join(Price_2017_6,gasoline_data,by='State')
 
 ## 8. number of colleges
 
+We think that the number of college is also a very important indicator to the price of the houses because college will attract many students coming from different places in the world to that county and these students need place to live. 
+
+So we scrape the data from the IPEDS Data Center to get all universities/colleges in the country and their corresponding cities. Then we use the data zip_county_lookup again to get the reference from cities to counties. We dont need the first column (school IDS) and we dont need the first row (title and columnnames). 
+
+After matching these schools with their corresponding counties we summarize the number of colleges in each counties and finally we merge that college dataset to our base dataset. We replace NA with 0s. 
+
 ```{r message=FALSE, warning=FALSE}
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
 
@@ -317,7 +323,11 @@ price_2017_8 = left_join(price_2017_7, school_data, by=c('County','State')) %>%
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 ```
 
+
 ## 9. Traffic data 
+
+Both the paper and the research group shows that the Traffic situation really affect the housing prices. No ones want to live in a place where they have to spent hours trafficing on the road. So we find a traffic dataset from the online sorces and after some manipulations on the dataset, we merge this data to our base dataset(dont talk too much here because it's very similar to what we did above).
+
 
 ```{r message=FALSE, warning=FALSE}
 epidata = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
@@ -334,6 +344,9 @@ price_2017_9 =left_join(price_2017_8, epidata,by=c('County','State'))%>%
 ```
 
 ## 10. shopping mall data 
+
+
+
 
 ```{r message=FALSE, warning=FALSE}
 read_wikitable_flat = function(state,n1,k,n4,n5,l4,l5){
