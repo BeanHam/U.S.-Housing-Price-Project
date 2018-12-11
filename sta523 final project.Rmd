@@ -525,7 +525,7 @@ We summarize number of hospitals, number of emergency hospitals and average hosp
 
 
 ```{r message=FALSE, warning=FALSE}
-price_2017 = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
+price_2017 = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
     select(Hospital.Name, County.Name, State,Emergency.Services, Hospital.overall.rating ) %>% rename(Name = Hospital.Name, County = County.Name, Emergency= Emergency.Services, rating = Hospital.overall.rating) %>%
     mutate(County = toTitleCase(tolower(County)),
            Emergency = as.numeric(Emergency),
