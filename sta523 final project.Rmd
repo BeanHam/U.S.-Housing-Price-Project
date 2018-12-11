@@ -345,8 +345,50 @@ price_2017_9 =left_join(price_2017_8, epidata,by=c('County','State'))%>%
 
 ## 10. shopping mall data 
 
+Number of Shopping mall is an important indicator to the housing price because of 
+
+1: if a county has one or more shopping mall it can at least show it's a prosperous county
+
+2: Shopping mall itself can attract people come/ travel to that county
+
+3. More shopping mall implies more people live nearby, thus higher housing price.
+
+Therefore, we scrape the shopping mall data from the online sources.
 
 
+However, that one is a bit tricky. Because for different states, shopping mall are stored in different websites, and the storing patterns are not the same. Some are stored in the table form, some are stored in the list form. And for both table form and list form, different webpage has different stroing methods. So basically we are scraping many different websites in this part and these websites are not identical.
+
+For data stored in wikitable forms, it has two categories: needed to be flatten and dont needed to be flatten. So I write two different functions o scrape these data. 
+
+For the table which needs to be flatten:
+
+the input are state name (used for the url), n1, the second data list we needed (the first data list is 1), k, the interval between each data list we needed, and n4,n5,l4,l5 are just the last two names and last two locations of shopping mall data list we needed. We need these n4,n5,l4,l5 because for some states they only have 4 data lists we needed for both name and location, so we can use NA for these 4 inputs. 
+
+After we read and flatten the wikitable, we got a list that inside this large list, some of the list contains the name and location we want and some contains the information we dont want. So we have to acquire the corresponding data we want and to make it into the dataframe with two columns: name and location. And we return that dataframe. 
+
+
+For the table dont need to be flatten:
+
+That's much easier. we simply read that wikitable and the whole list did not contain the data we dont want. Simply all names are stored in the list 1 and all locations are stored in the list 2. So we return that dataset with two columns: name and location. The input is only state using for the url.
+
+
+For the lists:
+
+We use "html_nodes(page,"li") %>% html_text()" to scrape the corresponding data we needed from the list in wikipedia. 
+
+We also need an input n because in the lists, after the shopping mall name and location, there are also other information stored in that list that we dont want. Therefore, because we already know the number of shopping mall within each state, we have to input that n (the number of shopping mall in that state = the number of useful rows in the list) so we are not getting any annoying data. 
+
+This is not hardcoding because there's no other way to do it more efficiently and we have tried our best to simplify the code here.
+
+
+Therefore, we scrape the data for different states directly using these three functions but for texas, it's different. Because in the texas shopping mall website, data is stored in different wikitables and lists. So i write a function read_taxas and the input p is simply the ID of wikitable stored in that website.
+
+
+After scraping all these dataset down we have to clean the location data because the original dataset are very messy. We use seperate the select to remove all unuseful (), latitute, longitude, state information inside the location.
+
+For each state's data We scrape, we mutate a new column state and generate the corresponding state to it in order for the group by below.
+
+Finally, we bind all these data into the dataframe shopping mall data. 
 
 ```{r message=FALSE, warning=FALSE}
 read_wikitable_flat = function(state,n1,k,n4,n5,l4,l5){
@@ -446,6 +488,13 @@ shopping_mall_data = bind_cols(shopping_mall_data_clean,shopping_mall_data) %>%
     rename(City = location, State = STATE)
 ```
 
+In that final shopping mall data we still have some problems: all letters are in the uppercase and there's some head blanks in some of the observations.
+
+So we did some data manipulations and merge it with the cities data we constructed before (to match the city to the counties).
+
+After matching to the counties, we summarize the number of shopping malls in each counties and merge it with the base dataset. Replacing NA with 0s. 
+
+
 ```{r message=FALSE, warning=FALSE}
 shopping_mall_data$City = tolower(shopping_mall_data$City) %>% str_trim(.,"left")
 cities$City = tolower(cities$City)
@@ -461,6 +510,10 @@ price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","S
 
 
 ## 11. Public high school data
+
+As the same reason as the colleges, high school also attract people coming from different places around the world. So we find the high school data (both public and private) from the online data sources and merge it into our base dataset.
+
+We dont want to illustrate too much here because basically we are using the very similar data cleaning as we are using above. 
 
 ```{r message=FALSE, warning=FALSE}
 public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
@@ -479,6 +532,10 @@ price_2017_11 = left_join(price_2017_10, public_school, by=c('County','State')) 
 
 ## 12. Private high school data
 
+The same reason as in the part 11.
+
+For here we use state.abb[match(toTitleCase(tolower(State)),state.name)] to transform the state name in the abbreviations by using the function state.abb. toTitleCase is to only transform the first letter into capital so it can match to the state.name. 
+
 ```{r message=FALSE, warning=FALSE}
 private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
     select(2, 5) %>% 
@@ -494,6 +551,13 @@ price_2017_12 = left_join(price_2017_11, private_school, by=c('County','State'))
 
 
 ## 13. Hospital data
+
+Hospital is a very important indicator for the housing price because everyone will sick in some of their life and they want good hospitals to treat.Therefore, if a county has many good hospitals it can attract people to live here.
+
+Therefore, we find a dataset containing all hospitals in the country and also their ratings, emergency service, etc. 
+
+We summarize number of hospitals, number of emergency hospitals and average hospital ratings for each country and merge them to the base dataset. Replacing NA with 0 and if a county doesnt have a hospital will replace 0 with its rating. 
+
 
 ```{r message=FALSE, warning=FALSE}
 hospital = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
