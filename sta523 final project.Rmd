@@ -111,7 +111,7 @@ So we use the method we have learned from the class and the previous homework (r
 At last we clean the data by filtering all empty values and replace all . with "". We cleaned the variable names and the variable classes and finally bind that tidy population dataset with our previous base dataset.
 
 ```{r message=FALSE, warning=FALSE}
-county_data = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income" %>%
+price_2017 = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income" %>%
   read_html() %>%
   html_nodes("table.wikitable.sortable") %>%
   {.[[1]]} %>%
@@ -124,8 +124,8 @@ county_data = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_p
             Median_Household_Income = as.numeric(Medianhouseholdincome),
             Median_Family_Income = as.numeric(Medianfamilyincome),
             Population = as.numeric(Population),
-            Num_Household = as.numeric(`Number ofhouseholds`))
-price_2017_2 = merge(price_2017,county_data,by = c('County','State'))
+            Num_Household = as.numeric(`Number ofhouseholds`)) %>%
+    merge(price_2017,.,by = c('County','State'))
 ```
 
 
@@ -139,17 +139,25 @@ Therefore, we only need the zipcode within the location to match the hotel to th
 
 Since We avoid the for loop we largely reduce the running time of scraping that data. But because we need to scrape so many websites within that single chunck so it may cause some time to run this chunk (but much shorter than we spent the time in our Denny's homework).  
 
-```{r message=FALSE, warning=FALSE}
-baseURL =  "https://www3.hilton.com"
-links = read_html("https://www3.hilton.com/en/hotel-locations/us/index.html") %>%
-    html_nodes(.,'ul.directory_locations_list li a') 
-urls = html_attr(links, "href") %>% paste0(baseURL, .)
+And the next step for us is to match the zipcodes to the counties. So we find a dataset online which contains all zipcodes, cities, counties, states data in the United States. This dataset is very important to us and we use a lot in our next few chuncks because it not only can match the zipcodes to the county but can also match the cities to counties.
 
-zips = sapply(urls, function(url){
+So after we match the zipcodes with the corrsponding counties, there may be some counties which have more than 1 hilton in it. Therefore, we need to group by the counties and summarize the sum of hilton numbers within that counties. 
+
+The final hilton data we merge into the base dataset is the number of hiltons within each counties. And we replace all NA with 0s. 
+
+```{r message=FALSE, warning=FALSE}
+zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv") %>%
+    mutate(County = COUNTYNAME)
+
+urls = read_html("https://www3.hilton.com/en/hotel-locations/us/index.html") %>%
+    html_nodes(.,'ul.directory_locations_list li a') %>% 
+    html_attr(., "href") %>% paste0("https://www3.hilton.com", .)
+
+price_2017 = sapply(urls, function(url){
      url %>%
          read_html() %>%
          html_nodes('ul.directory_locations_list li a') %>%
-         {paste0(baseURL, html_attr(., "href"))} %>%
+         {paste0("https://www3.hilton.com", html_attr(., "href"))} %>%
          sapply(function(locationURL){
              locationURL %>%
                  read_html() %>%
@@ -165,35 +173,19 @@ zips = sapply(urls, function(url){
  }) %>%
      unlist() %>%
      unname() %>%
-    as.data.frame() 
-colnames(zips) = "zips"
-```
-
-And the next step for us is to match the zipcodes to the counties. So we find a dataset online which contains all zipcodes, cities, counties, states data in the United States. This dataset is very important to us and we use a lot in our next few chuncks because it not only can match the zipcodes to the county but can also match the cities to counties.
-
-So after we match the zipcodes with the corrsponding counties, there may be some counties which have more than 1 hilton in it. Therefore, we need to group by the counties and summarize the sum of hilton numbers within that counties. 
-
-The final hilton data we merge into the base dataset is the number of hiltons within each counties. And we replace all NA with 0s. 
-
-```{r message=FALSE, warning=FALSE}
-zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv") %>%
-    mutate(County = COUNTYNAME)
-
-hilton_county = merge(zips,zip_county_lookup,by.x ='zips',by.y = 'ZIP') %>%
+    as.data.frame() %>%
+    {colnames(.)[1] = "zips"; .} %>%
+    merge(.,zip_county_lookup,by.x ='zips',by.y = 'ZIP') %>%
      mutate(COUNTYNAME = COUNTYNAME %>%
                 str_locate_all(" ") %>%
                 sapply(function(mat){mat[min(dim(mat), 2), 1] - 1}) %>%
-                {str_sub(COUNTYNAME, 1, .)})
-
-distinct_count = hilton_county%>%
+                {str_sub(COUNTYNAME, 1, .)}) %>%
   group_by(COUNTYNAME,STATE) %>%
   summarize(count = length(COUNTYNAME)) %>%
     mutate(hilton_count = count) %>% 
-    dplyr::select(COUNTYNAME,STATE,hilton_count)
-    
-price_2017_3 = left_join(price_2017_2, distinct_count, by = c("County"="COUNTYNAME","State" = "STATE")) %>%
+    dplyr::select(COUNTYNAME,STATE,hilton_count) %>%
+    left_join(price_2017, ., by = c("County"="COUNTYNAME","State" = "STATE")) %>%
   mutate_all(funs(replace(., is.na(.), 0)))
-
 ```
 
 
@@ -210,7 +202,7 @@ clean_county = function(df){
              str_replace(" [cC]ity,*$", " City"))
 }
 
-price_2017_4 = clean_county(price_2017_3) 
+price_2017 = clean_county(price_2017) 
 zip_county_lookup = clean_county(zip_county_lookup) %>%
   select(ZIP,STATE,County,CITY)
 ```
@@ -226,7 +218,7 @@ We clean the crime dataframe and merge it into the base dataset. Since in the cr
 However, one observation missing after the merging and after checking for that variables we discover that in crime dataset that obversvation names "Larue" but it should named "LaRue" in our base dataset. So we modified that observation and merge agian. 
 
 ```{r message=FALSE, warning=FALSE}
-crime_data = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
+price_2017 = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
   select(county_name, crime_rate_per_100000, IDNO, CPOPCRIM, CPOPARST, COVIND,
          MURDER, RAPE, ROBBERY, AGASSLT, BURGLRY, LARCENY, MVTHEFT, ARSON) %>%
   mutate(county_name = strsplit(county_name, " ")) %>%
@@ -234,14 +226,8 @@ crime_data = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
   mutate(State = County %>% sapply(last),
          County = County %>% sapply(head, -1) %>% 
            sapply(function(v) {do.call(paste, as.list(v))})) %>%
-  clean_county()
-
-price_2017_5 = merge(price_2017_4,crime_data,by=c('County','State'))
-
-crime_lost = price_2017_4[price_2017_4$County %ni% price_2017_5$County,]
-w = which(crime_data$County == 'Larue')
-crime_data$County[w] = crime_lost$County[1]
-price_2017_5 = left_join(price_2017_4,crime_data,by=c('County','State'))
+  clean_county() %>%
+    left_join(price_2017,.,by=c('County','State'))
 ```
 
 ## 6. tax rate data
@@ -255,15 +241,14 @@ Finally, we merge that tax rate dataset with our base dataset.
 ```{r message=FALSE, warning=FALSE}
 setwd("TAXRATES_ZIP5")
 
-tax_rate_data = list.files(pattern = "*.csv") %>%
+price_2017 = list.files(pattern = "*.csv") %>%
   map(read.csv) %>%
   {do.call(bind_rows, .)} %>%
   left_join(zip_county_lookup,by=c("ZipCode"="ZIP")) %>%
   select(County, State, StateRate, EstimatedCombinedRate, EstimatedCountyRate,
          EstimatedCityRate, EstimatedSpecialRate, RiskLevel) %>%
-  {.[!duplicated(.[,1:2]), ]}
-
-Price_2017_6 = left_join(price_2017_5,tax_rate_data,by=c('County','State'))
+  {.[!duplicated(.[,1:2]), ]} %>%
+    left_join(price_2017,.,by=c('County','State')) 
 ```
 
 ## 7. gasoline price data
@@ -278,20 +263,18 @@ Finally, we merge the gasoline dataset with our base dataset.
 
 ```{r message=FALSE, warning=FALSE}
 get_gasoline = function(k){
+    web = read_html("https://gasprices.aaa.com/state-gas-price-averages/")
     dat = trimws(html_text(html_nodes(web, paste0("td:nth-child(",k,")"))))
-}
+    }
 
-web = read_html("https://gasprices.aaa.com/state-gas-price-averages/")
-gasoline_data = data.frame(State=get_gasoline(1), Regular=get_gasoline(2), MidGrade=get_gasoline(3), Premium=get_gasoline(4), Diesel=get_gasoline(5)) %>% lapply(., gsub, pattern="\\$", replacement="") %>% 
+price_2017 = data.frame(State=get_gasoline(1), Regular=get_gasoline(2), MidGrade=get_gasoline(3), Premium=get_gasoline(4), Diesel=get_gasoline(5)) %>% lapply(., gsub, pattern="\\$", replacement="") %>% 
     as.data.frame() %>% 
     mutate(Regular = as.numeric(as.character(Regular)),
            MidGrade = as.numeric(as.character(MidGrade)),
            Premium = as.numeric(as.character(Premium)),
-           Diesel = as.numeric(as.character(Diesel)))
-
-gasoline_data$State = state.abb[match(gasoline_data$State,state.name)]
-price_2017_7 = left_join(Price_2017_6,gasoline_data,by='State')
-
+           Diesel = as.numeric(as.character(Diesel))) %>%
+    mutate(State = state.abb[match(State,state.name)]) %>%
+    left_join(price_2017,.,by='State')
 ```
 
 ## 8. number of colleges
@@ -305,21 +288,18 @@ After matching these schools with their corresponding counties we summarize the 
 ```{r message=FALSE, warning=FALSE}
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
 
-schools = read_html("IPEDS Data Center.html") %>%
-    html_node("table.idc_gridview") %>%
-    html_table() %>%
-    select(-X1) %>% .[-1,]
-
-colnames(schools) = c("school", "City", "State")
-
 cities = zip_county_lookup %>% select(CITY, County, STATE) %>% unique() %>%
     rename(State = STATE, City = CITY)
 
-school_data = left_join(schools,cities, by=c('City','State'))%>% 
+price_2017 = read_html("IPEDS Data Center.html") %>%
+    html_node("table.idc_gridview") %>%
+    html_table() %>%
+    select(-X1) %>% .[-1,] %>%
+    rename(school = X2, City = X3, State = X4) %>%
+    left_join(.,cities, by=c('City','State'))%>% 
     group_by(County, State) %>%
-    summarise(college_num = n()) 
-
-price_2017_8 = left_join(price_2017_7, school_data, by=c('County','State')) %>%
+    summarise(college_num = n()) %>%
+    left_join(price_2017, ., by=c('County','State')) %>%
     mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 ```
 
@@ -330,17 +310,15 @@ Both the paper and the research group shows that the Traffic situation really af
 
 
 ```{r message=FALSE, warning=FALSE}
-epidata = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
+price_2017 = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
   select(county_name,state,hwyprop,ryprop,
          pct_pub_transport_log,fatal_rate_log,
          pct_pers_lt_pov,pct_unemp) %>% 
   rename(County=county_name,State=state)%>% 
   mutate(County=str_replace_all(County,"County","") %>% 
-           str_trim(side = "both"))
-
-price_2017_9 =left_join(price_2017_8, epidata,by=c('County','State'))%>%
+           str_trim(side = "both")) %>%
+    left_join(price_2017, .,by=c('County','State'))%>%
   mutate_all(funs(replace(., is.na(.), 0)))
-
 ```
 
 ## 10. shopping mall data 
@@ -389,6 +367,12 @@ After scraping all these dataset down we have to clean the location data because
 For each state's data We scrape, we mutate a new column state and generate the corresponding state to it in order for the group by below.
 
 Finally, we bind all these data into the dataframe shopping mall data. 
+
+In that final shopping mall data we still have some problems: all letters are in the uppercase and there's some head blanks in some of the observations.
+
+So we did some data manipulations and merge it with the cities data we constructed before (to match the city to the counties).
+
+After matching to the counties, we summarize the number of shopping malls in each counties and merge it with the base dataset. Replacing NA with 0s. 
 
 ```{r message=FALSE, warning=FALSE}
 read_wikitable_flat = function(state,n1,k,n4,n5,l4,l5){
@@ -441,22 +425,15 @@ colnames(dat)<-c("name","location")
 return(dat)
 }
 
-page = read_html("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_the_United_States")
-
-st_data = data_frame(
-  name=html_nodes(page,"li") %>% html_text() 
-) %>% .[59:879,] %>% 
-  separate(name, c("name", "location1"), " . ",remove=TRUE)%>%
-  separate(name, c("name", "location2"), "–",remove=TRUE, extra = "merge") %>% 
-  mutate(location = coalesce(location1,location2)) %>%
-  select(name, location)
-
 shooping_mall_num = read_xlsx("shooping_mall_num.xlsx",1)
 shopping = shooping_mall_num[rep(row.names(shooping_mall_num), shooping_mall_num$'Number of Malls'), 1] %>%
   as.data.frame() %>% .[1:821,]
-st_data = st_data %>% mutate(STATE = shopping)
 
-shopping_mall_data = bind_rows(
+cities$City = tolower(cities$City)
+
+page = read_html("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_the_United_States")
+
+price_2017 = bind_rows(
     al_data = read_wikitable_nonflat("Alabama") %>% mutate('STATE' = 'AL'),
     ca_data = read_wikilist("California",181) %>%
   separate(location, c("location", "state"), ",",remove=TRUE, extra = "merge") %>% 
@@ -474,40 +451,29 @@ shopping_mall_data = bind_rows(
                 texas = read_wikilist("Texas",50) %>% .[15:50,] %>% separate(location, c("location", "other"), "[(]",remove=TRUE, extra = "merge") %>% 
   select(name, location)) %>% 
   mutate('STATE' = 'TX'),
-  st_data)
-
-shopping_mall_data_clean = shopping_mall_data %>%
-  select(name, location)%>%
-  separate(name, c("name", "other"), "[(]",remove=TRUE)%>%
-  select(name, location)%>%
+  st_data = data_frame(
+  name=html_nodes(page,"li") %>% html_text() 
+) %>% .[59:879,] %>% 
+  separate(name, c("name", "location1"), " . ",remove=TRUE)%>%
+  separate(name, c("name", "location2"), "–",remove=TRUE, extra = "merge") %>% 
+  mutate(location = coalesce(location1,location2)) %>%
+  select(name, location) %>% mutate(STATE = shopping)) %>%
+  separate(name, c("name", "other"), "[(]",remove=TRUE) %>%
+  select(name, location, STATE)%>%
   separate(location, c("location", "other"), "[(]",remove=TRUE) %>%
-  select(name, location)
-
-shopping_mall_data = bind_cols(shopping_mall_data_clean,shopping_mall_data) %>% 
-    select(name,location,STATE) %>% 
-    rename(City = location, State = STATE)
-```
-
-In that final shopping mall data we still have some problems: all letters are in the uppercase and there's some head blanks in some of the observations.
-
-So we did some data manipulations and merge it with the cities data we constructed before (to match the city to the counties).
-
-After matching to the counties, we summarize the number of shopping malls in each counties and merge it with the base dataset. Replacing NA with 0s. 
-
-
-```{r message=FALSE, warning=FALSE}
-shopping_mall_data$City = tolower(shopping_mall_data$City) %>% str_trim(.,"left")
-cities$City = tolower(cities$City)
-
-shopping_mall_data_final = merge(shopping_mall_data,cities,by=c("City","State")) %>%
+  select(name, location, STATE) %>%
+    rename(City = location, State = STATE) %>%
+    mutate(City = tolower(City) %>% str_trim(.,"left")) %>%
+  merge(.,cities,by=c("City","State")) %>%
   select(name,City,State,County) %>% unique() %>%
   group_by(County,State) %>%
-  summarise(num_shoppingmall = length(County)) 
-
-price_2017_10 = left_join(price_2017_9,shopping_mall_data_final,by=c("County","State")) %>% 
+  summarise(num_shoppingmall = length(County)) %>%
+  left_join(price_2017,.,by=c("County","State")) %>%
     mutate(num_shoppingmall = ifelse(is.na(num_shoppingmall), 0, num_shoppingmall))
-```
+    
+    
 
+```
 
 ## 11. Public high school data
 
@@ -516,7 +482,7 @@ As the same reason as the colleges, high school also attract people coming from 
 We dont want to illustrate too much here because basically we are using the very similar data cleaning as we are using above. 
 
 ```{r message=FALSE, warning=FALSE}
-public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
+price_2017 = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
     select(1, 2, 4) %>%
     rename(State = County.Name, County = County.Name..Public.School..2015.16, public_school_num = Total.Number.of.Public.Schools..Public.School..2015.16) %>%
     mutate(County = str_trim(str_replace(.$County, "County", "")),
@@ -524,9 +490,8 @@ public_school = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>%
            State = stri_sub(str_trim(State), -2, -1)) %>% 
     na.omit() %>%
     group_by(County, State) %>% 
-    summarise(public_school_count = sum(public_school_num, na.rm = TRUE))
-
-price_2017_11 = left_join(price_2017_10, public_school, by=c('County','State')) %>%
+    summarise(public_school_count = sum(public_school_num, na.rm = TRUE)) %>%
+    left_join(price_2017, ., by=c('County','State')) %>%
     mutate(public_school_count = ifelse(is.na(public_school_count), 0, public_school_count))
 ```
 
@@ -537,16 +502,16 @@ The same reason as in the part 11.
 For here we use state.abb[match(toTitleCase(tolower(State)),state.name)] to transform the state name in the abbreviations by using the function state.abb. toTitleCase is to only transform the first letter into capital so it can match to the state.name. 
 
 ```{r message=FALSE, warning=FALSE}
-private_school = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
+price_2017 = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
     select(2, 5) %>% 
     rename(State = State.Name..Private.School..Latest.available.year, County = County.Name..Private.School..2015.16) %>% 
     mutate(State = state.abb[match(toTitleCase(tolower(State)),state.name)],
            County = toTitleCase(tolower(County))) %>%
     group_by(County, State) %>% 
-    summarise(private_school_count = n()) 
-
-price_2017_12 = left_join(price_2017_11, private_school, by=c('County','State')) %>%
+    summarise(private_school_count = n()) %>%
+    left_join(price_2017, ., by=c('County','State')) %>%
     mutate(private_school_count = ifelse(is.na(private_school_count), 0, private_school_count))
+
 ```
 
 
@@ -560,7 +525,7 @@ We summarize number of hospitals, number of emergency hospitals and average hosp
 
 
 ```{r message=FALSE, warning=FALSE}
-hospital = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
+price_2017 = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
     select(Hospital.Name, County.Name, State,Emergency.Services, Hospital.overall.rating ) %>% rename(Name = Hospital.Name, County = County.Name, Emergency= Emergency.Services, rating = Hospital.overall.rating) %>%
     mutate(County = toTitleCase(tolower(County)),
            Emergency = as.numeric(Emergency),
@@ -569,9 +534,7 @@ hospital = private_school = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
     summarise(num_hospitals = length(County),
               num_emergency = sum(Emergency),
               hospital_rating = mean(rating,na.rm = TRUE)) %>%
-    mutate(hospital_rating = ifelse(is.nan(hospital_rating), 0, hospital_rating))
-
-price_2017_13 = left_join(price_2017_12, hospital, by=c('County','State')) %>%
+    mutate(hospital_rating = ifelse(is.nan(hospital_rating), 0, hospital_rating)) %>% left_join(price_2017, ., by=c('County','State')) %>%
     mutate(num_hospitals = ifelse(is.na(num_hospitals), 0, num_hospitals),
            num_emergency = ifelse(is.na(num_emergency), 0, num_emergency),
            hospital_rating = ifelse(is.na(hospital_rating), 0, hospital_rating))
@@ -579,7 +542,7 @@ price_2017_13 = left_join(price_2017_12, hospital, by=c('County','State')) %>%
 
 
 ```{r}
-county_data = price_2017_13
+county_data = price_2017
 save(county_data, file = "county_data.RData")
 ```
 
