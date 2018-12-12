@@ -83,6 +83,15 @@ library(sqldf)
 library(stringi)
 library(readxl)
 library(tools)
+library(gridExtra)
+library(BAS)
+library(randomForest)
+library(neuralnet)
+suppressMessages(library(shiny))
+suppressMessages(library(shinythemes))
+suppressMessages(library(dplyr))
+suppressMessages(library(tidyverse))
+suppressMessages(library(urbnmapr))
 '%ni%' <- Negate('%in%')
 ```
 
@@ -545,5 +554,319 @@ price_2017 = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
 county_data = price_2017
 save(county_data, file = "county_data.RData")
 ```
+
+
+Model EDA
+
+```{r}
+create_plot = function(input, name){
+    if(is.factor(input)){
+        p = data_frame(
+            price = county_data$price,
+            input = input
+        ) %>% 
+            ggplot(aes(x = input, y = price)) + 
+            geom_boxplot() + 
+            labs(x = name)
+    }else{
+        p = data_frame(
+            price = county_data$price,
+            input = input
+        ) %>% 
+            ggplot(aes(x = input, y = price)) + 
+            geom_point() + 
+            labs(x = name)
+    }
+    return(p)
+}
+
+subplots = function(df, cols){
+    eda_plots = map(cols, function(i){create_plot(df[, i], names(df)[i])})
+    grid.arrange(grobs = eda_plots, nrow = 3, ncol = 3)
+}
+
+df = county_data %>% 
+    select(- County, - State, - price) %>%
+    mutate(hilton_count = as.factor(hilton_count))
+### change df's certain column into factor before inputting into `subplots` 
+### if boxplot is preferred for this column's predictor
+
+walk(1:(ncol(df) %/% 9 + 1), function(group_num){
+    col_index = (group_num * 9  - 8):min(group_num * 9, ncol(df))
+    subplots(df, col_index)
+})
+```
+
+
+Modelling
+
+```{r}
+county_data = county_data %>% 
+    select(- County, - State)
+# rescale mean 0 sd 1
+rescale_mean = apply(county_data, 2, mean)
+rescale_sd = apply(county_data, 2, sd)
+county_data = county_data %>%
+    sweep(2, rescale_mean, "-") %>%
+    sweep(2, rescale_sd, "/")
+# train test split 3:1
+set.seed(0)
+train_index = sample(1:dim(county_data)[1], floor(dim(county_data)[1] * 0.75))
+train = county_data[train_index, ]
+test = county_data[- train_index, ]
+# R-square function
+Rsq = function(y_pred, y){
+    1 - sum((y_pred - y) ^ 2) / sum((y - mean(y)) ^ 2)
+}
+```
+
+linear model
+
+```{r}
+lm1 = lm(price ~ ., train)
+print(Rsq(predict(lm1, train, type = "response"), train$price))
+print(Rsq(predict(lm1, test, type = "response"), test$price))
+# linear model with interaction
+lm2 = lm(price ~ . ^ 2, train)
+print(Rsq(predict(lm2, train, type = "response"), train$price))
+print(Rsq(predict(lm2, test, type = "response"), test$price))
+### AIC/BIC selection could be used here ###
+```
+
+
+Bayesian Model Averaging
+
+```{r}
+bma1 = bas.lm(price ~ ., train)
+# predictors with posterior probability large than 0.1:
+summary(bma1)[, 1] %>%
+    .[. > 0.1 & !is.na(.)] %>%
+    names() %>%
+    print()
+# select useful variables from BMA
+cols = summary(bma1)[, 1] %>%
+    .[. > 0.1 & !is.na(.)] %>%
+    names() %>%
+    {c("price", .[-1])}
+train2 = train %>% select(cols)
+test2 = test %>% select(cols)
+# linear model again
+lm3 = lm(price ~ ., train2)
+print(Rsq(predict(lm3, train2, type = "response"), train2$price))
+print(Rsq(predict(lm3, test2, type = "response"), test2$price))
+# with interactions again
+lm4 = lm(price ~ . ^ 2, train2)
+print(Rsq(predict(lm4, train2, type = "response"), train2$price))
+print(Rsq(predict(lm4, test2, type = "response"), test2$price))
+### AIC/BIC selection for interactions here ###
+```
+
+
+random forest
+
+```{r}
+rf1 = randomForest(price ~ ., data = train2, ntree = 3000)
+print(Rsq(predict(rf1, train2, type = "response"), train2$price))
+print(Rsq(predict(rf1, test2, type = "response"), test2$price))
+```
+
+
+fully connected neural networks + early stopping + bagging (no bootstrapping)
+
+```{r}
+f = do.call(paste, as.list(cols)) %>% 
+    str_replace_all(" ", " + ") %>%
+    str_replace("\\+", "~") %>%
+    as.formula()
+# bagging here
+nbags = 100
+# early stoppping by setting threshold
+nn2 = map(1:nbags, function(i){neuralnet(f, train2, hidden = 10, threshold = 1.5)})
+y_train_pred = nn2 %>%
+    map(function(nn){compute(nn, train2[, -1])$net.result}) %>%
+    unlist() %>%
+    matrix(ncol = nbags) %>%
+    rowMeans()
+y_test_pred = nn2 %>%
+    map(function(nn){compute(nn, test2[, -1])$net.result}) %>%
+    unlist() %>%
+    matrix(ncol = nbags) %>%
+    rowMeans()
+print(Rsq(y_train_pred, train2$price))
+print(Rsq(y_test_pred, test2$price))
+### neural net + early stopping + bagging is slightly better than random forest
+# parameters for neural nets are yet to be tunned, if time allows
+
+```
+
+
+
+Shiny
+
+```{r}
+county_plot=urbnmapr::counties %>% 
+    rename(State=state_abbv,County=county_name) %>% 
+    mutate(County=str_replace_all(County,"County","") %>% 
+           str_trim(side = "both"))
+state_list = unique(county_data$State)
+
+
+county_data = county_data %>% 
+  rename('Housing Price' = price,
+         'Income Per Capita' = Income_PerCapita,
+         'Crime Rate' = crime_rate_per_100000,
+         'Unemployment Rate' = pct_unemp,
+         'Num Of Colleges' = college_num,
+         'Num Of Public Schools' = public_school_count,
+         'Num Of Private Schools' = private_school_count,
+         'Hospital Rating' = hospital_rating,
+         'Num Of Shoppingmalls' = num_shoppingmall,
+         'Unemployment Rate' = pct_unemp,
+         'Risk Level' = RiskLevel)
+
+variable_list = c("State",
+                  "County",
+                  "Population",
+                  "Crime Rate",
+                  "Risk Level",                  
+                  "Housing Price",
+                  "Hospital Rating",                  
+                  "Num Of Colleges",
+                  "Income PerCapita",  
+                  "Unemployment Rate",                    
+                  "Num Of Public Schools",
+                  "Num Of Private Schools",
+                  "Num Of Shoppingmalls")
+```
+
+```{r}
+
+shinyApp(
+  ui = tagList(
+    navbarPage(
+    theme = shinytheme("cosmo"),      
+    "U.S. County Housing Price",
+    tabPanel("County Outlook", 
+             sidebarPanel(
+               selectInput("state", "Select A State", choices = state_list, selected = 1),
+               checkboxGroupInput("variable","Select variables to view", variable_list),
+               actionButton("update", "Update"),
+               hr(),
+               h3("Variable Dictionary: "),
+               helpText("- Crime Rate: number of crimes per 100,000"),
+               helpText("- Risk Level: 9 - Highest; 0 - lowest"),
+               helpText("- Housing Price: $1000/square-meters"),
+               helpText("- Hospital Rating: 5 - highest; 0 - lowest"),
+               helpText("- Unemployment Rate: in percentage")
+               ),
+             mainPanel(
+               DT::dataTableOutput("table1")
+               )),
+    
+    tabPanel("County Housing Price",
+             sidebarPanel(
+               selectInput("state_hist", "Select A State", choices = state_list, selected = 1),
+               sliderInput("slide", 
+                           label = "Choose Your Price Range", 
+                           min = 0.406, max = 4, value = 2),
+               actionButton("histogram", "Get Housing Distribution"),
+               hr(),
+               h3("Variable Dictionary: "),
+               helpText("- Housing Price: $1000/m^2")
+               ),
+             mainPanel(
+               plotOutput("distribution")
+             )),
+    
+    tabPanel("Map View", 
+             sidebarPanel(
+               selectInput("feature", "Select A Plot Feature", 
+                           choices =c("Housing Price","Income Per Capita"), selected = 1),
+               actionButton("plot", "Plot"),
+               hr()),
+             mainPanel(
+               plotOutput("plot1")
+               )))
+    ),
+  
+  server = function(input, output, session){
+    
+    ## panel1 
+    tabledata = eventReactive(
+      input$update,{
+      county_data %>% filter(State == input$state) %>% select(input$variable)
+    })
+    
+    output$table1 = DT::renderDataTable(DT::datatable({
+      tabledata()
+      }))
+    
+    ## panel 2
+    plotdata = eventReactive(
+      input$plot,{
+      county_data  %>% select(input$feature,State,County) %>% 
+              left_join(.,county_plot,by=c("State","County"))
+    })
+    
+    output$plot1 = renderPlot({
+    plotdata() %>%
+    ggplot(aes(x=long, y=lat, group = group, fill = price)) +
+    geom_polygon(color = NA) +
+        geom_polygon(data = urbnmapr::states, mapping = aes(long, lat, group = group),
+        fill = NA, color = "#ffffff") +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+    theme(legend.title = element_text(),
+        legend.key.width = unit(.5, "in"))+
+    labs(fill = "price") 
+
+    })
+    
+    # panel 3
+    observeEvent(
+      input$state_hist, {
+        histdata = county_data %>% filter(State == input$state_hist)
+        updateSliderInput(session, "slide", 
+                          max = max(histdata$`Housing Price`))
+      })
+    
+    histdata = eventReactive(
+      input$histogram, {
+        county_data %>% filter(State == input$state_hist,
+                               `Housing Price`<= input$slide)
+      }
+    )
+    
+    output$distribution = renderPlot({
+      plot = histdata()
+      
+      ggplot(data = plot, 
+             aes(x = reorder(County, -`Housing Price`), 
+                 y = `Housing Price`,
+                 fill = `Housing Price`)) +
+        geom_bar(stat = "identity",
+                 color = "black",
+                 position = position_dodge()) +
+        geom_text(aes(label = `Housing Price`),
+                  position = position_dodge(0.9),
+                  vjust = 1.6,
+                  size = 3.5,
+                  color = "black") +
+        xlab("County") +
+        ylab("Housing Price ($1000/m^2)") +
+        theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1)) +
+        scale_fill_gradient(low="lightblue", high="pink")
+      })
+  }
+  
+)
+
+```
+
+
+
+
+
+
+
 
 
