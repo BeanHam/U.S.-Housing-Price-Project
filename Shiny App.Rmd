@@ -81,7 +81,7 @@ shinyApp(
                selectInput("state_hist", "Select A State", choices = state_list, selected = 1),
                sliderInput("slide", 
                            label = "Choose Your Price Range", 
-                           min = 0.406, max = 4, value = 2),
+                           min = 0.406, max = 4, value = c(0.5, 0.6)),
                actionButton("histogram", "Get Housing Distribution"),
                hr(),
                h3("Variable Dictionary: "),
@@ -138,14 +138,16 @@ shinyApp(
     observeEvent(
       input$state_hist, {
         histdata = county_data %>% filter(State == input$state_hist)
-        updateSliderInput(session, "slide", 
+        updateSliderInput(session, "slide",
+                          min = min(histdata$`Housing Price`),
                           max = max(histdata$`Housing Price`))
       })
     
     histdata = eventReactive(
       input$histogram, {
         county_data %>% filter(State == input$state_hist,
-                               `Housing Price`<= input$slide)
+                               `Housing Price`<= input$slide[2],
+                               `Housing Price` >= input$slide[1])
       }
     )
     
