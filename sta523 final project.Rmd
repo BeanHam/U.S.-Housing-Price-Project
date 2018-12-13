@@ -904,9 +904,64 @@ We will use these results for our later recommendation sections.
 
 
 
+Recommendation system:
+
+1. Find Overvalued and Undervalued Counties 
+
+We first get the prediction averaging housing price for each county under the neural networks:
+
+```{r}
+pred = nn2 %>%
+    map(function(nn){compute(nn, county_data_modelling[, -1])$net.result}) %>%
+    unlist() %>%
+    matrix(ncol = nbags) %>%
+    rowMeans()
+```
+
+Because we have do the rescaling before, so we have to transmute it back to the original:
+
+```{r}
+pred = pred * rescale_sd[1] + rescale_mean[1]
+```
+
+We merge the prediction result back to the original dataset and sepearte all counties into 7 recommendation categories base on our prediction price (value) and their real price: Highly Highly Recommend. A very nice investment, Highly Recommend. Great Deal, Recommend. Better than fair, Fair offer, Not Recommend. Worse than fair, Highly not Recommend. Bad deal and Highly Highly not Recommend. A very bad investment you may regret!. 
+
+Although most of the counties are Fair offer, we do have find several counties that are being highly overvalued or undervalued. We can recommend these undervalued counties to our audience and do not recommend these overvalued couties to our audience. 
+
+```{r}
+county_data = county_data %>%
+    mutate(
+        predictions = pred,
+        diff = pred-price
+    )
+
+for(i in 1:1668){
+    if(county_data$diff[i] > 0.2 ){
+        county_data$recommend[i] = "Highly Highly Recommend. A very nice investment"
+    }
+    else if(county_data$diff[i] > 0.1 & county_data$diff[i] <= 0.2){
+        county_data$recommend[i] = "Highly Recommend. Great Deal."
+    }
+    else if(county_data$diff[i] > 0.05 & county_data$diff[i] <= 0.1){
+        county_data$recommend[i] = "Recommend. Better than fair"
+    }
+    else if(county_data$diff[i] < -0.05 & county_data$diff[i] >= -0.1){
+        county_data$recommend[i] = "Not Recommend. Worse than fair"
+    }
+    else if(county_data$diff[i] < -0.1 & county_data$diff[i] >= -0.2){
+        county_data$recommend[i] = "Highly not Recommend. Bad deal"
+    }
+    else if(county_data$diff[i] < -0.2){
+        county_data$recommend[i] = "Highly Highly not Recommend. A very bad investment you may regret!"
+    }
+    else{
+        county_data$recommend[i] = "Fair offer"
+    }
+}
+```
 
 
-
+2. Recommend Counties to the audience by the variables they select
 
 
 
