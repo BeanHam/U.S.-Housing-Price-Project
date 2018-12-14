@@ -45,7 +45,7 @@ variable_list = c("State",
                   "Housing Price",
                   "Hospital Rating",                  
                   "Num Of Colleges",
-                  "Income PerCapita",  
+                  "Income Per Capita",  
                   "Unemployment Rate",                    
                   "Num Of Public Schools",
                   "Num Of Private Schools",
@@ -176,6 +176,22 @@ shinyApp(
 )
 
 ```
+
+## Shiny App Details
+There are severals panels in our the shiy app, with each one containing different information. 
+
+1. County Outlook: this panel displays a table containing the general information of some indicators for each county. This panel takes the cleaned dataframe as input and users can select which state they want to look at. Then, they can specify the variables they are interested in. By clicking 'Update', the table will show up on the right. Users can further do some search, filter, and sort on the table. 
+
+2. County Housing Price: considering that some users are interested in the distribution of housing prices in different counties in a state, we created this panel. Users chooses a state and the lower and upper bound of the housing price will update automatically. Then users can specify the range of prices they want to look at and a bar graph (sorted by the price in descending order) will show up, with counties on the x-axis. 
+
+
+
+
+
+
+
+
+
 
 
 
