@@ -1025,6 +1025,13 @@ county_data_recommend_for_shiny = bind_cols(county,county_data_recommend_for_shi
 ```
 
 
+```{r}
+recommendation_for_shiny = county_data %>% 
+  select(County,recommend)
+
+save(recommendation_for_shiny, file = "recommendation_part1.RData")
+save(county_data_recommend_for_shiny, file = "recommendation_part2.RData")
+```
 
 
 
