@@ -127,6 +127,8 @@ suppressMessages(library(dplyr))
 suppressMessages(library(tidyverse))
 suppressMessages(library(urbnmapr))
 '%ni%' <- Negate('%in%')
+library(fmsb)
+library(tidyverse)
 ```
 
 ## 1. base data
@@ -811,6 +813,9 @@ Income_PerCapita, pct_pub_transport_log, EstimatedSpecialRate, BURGLRY, ROBBERY,
 
 Income per capital, BURGLRY, Premium and MidGrade really make a great impact on the price of the housing(with the large coefficients) indicating that CPI, earning, and safety are the factors that people consider the most when they are buying a house. 
 
+What being strange here is that more robbery and larceny, higher price for the county. It may due to that because these places have higher housing price so more richer people tend to live in these areas, causing more robbery and larceny. 
+
+
 
 If we want to learn more on other factors that may affect the price of the housing, we can look at the AIC model:
 
@@ -962,6 +967,63 @@ for(i in 1:1668){
 
 
 2. Recommend Counties to the audience by the variables they select
+
+As we have concluded above, the 8 factors that people will consider the most when they are buying their houses are: Safety rate, Income level, CPI (spending level)
+Traffic situation (transportation), Tax rate, Education (colleges and high schools)
+Economic situation (Unemployment rate and poverty rate) and Number of shopping malls. 
+
+I want to add a new variable to our recommendation system: price. Obviously, people may consider the price when they are choosing their new homes.
+
+We first select out important variables we concluded in the linear model which can illusrate each important factors:
+
+```{r}
+county_data_recommend = county_data %>% 
+    select(price, Income_PerCapita, Regular, pct_pub_transport_log,EstimatedSpecialRate, BURGLRY, ROBBERY, LARCENY, Median_Family_Income, Premium, MidGrade, pct_pers_lt_pov,pct_unemp,
+num_shoppingmall, college_num, MURDER, EstimatedCountyRate ,public_school_count,CPOPCRIM, ryprop, private_school_count) 
+
+
+county_data_recommend = county_data_recommend %>%
+    mutate(price = 100 - ntile(price, 100),
+        Income_PerCapita = ntile(Income_PerCapita, 100),
+        pct_pub_transport_log = ntile(pct_pub_transport_log, 50) * 2,
+        EstimatedSpecialRate = 100 - ntile(EstimatedSpecialRate, 50) * 2,
+        BURGLRY = 100 - ntile(BURGLRY, 50) * 2,
+        ROBBERY = 100 - ntile(ROBBERY, 50) * 2,
+        LARCENY = 100 - ntile(LARCENY, 50) * 2,
+        Premium = 100 - ntile(Premium, 50) * 2,
+        Regular = 100 - ntile(Regular, 50) * 2,
+        MidGrade = 100 - ntile(MidGrade, 50) * 2,
+        pct_pers_lt_pov = 100 - ntile(pct_pers_lt_pov, 100),
+        pct_unemp = 100 - ntile(pct_unemp, 100),
+        num_shoppingmall = ntile(num_shoppingmall, 16) * 6,
+        college_num = ntile(college_num, 10) * 10,
+        MURDER = 100 - ntile(MURDER, 50) * 2,
+        EstimatedCountyRate = 100 - ntile(EstimatedCountyRate, 50) * 2,
+        public_school_count = ntile(public_school_count, 10) * 10,
+        private_school_count = ntile(private_school_count, 10) * 10,
+        CPOPCRIM = 100 - ntile(CPOPCRIM, 100),
+        ryprop = ntile(ryprop,100)
+        ) %>% rowwise() %>%
+    mutate(safety = mean(BURGLRY,ROBBERY,LARCENY,MURDER,CPOPCRIM),
+           income = Income_PerCapita,
+           transportation = mean(pct_pub_transport_log,ryprop),
+           cpi = mean(Premium,Regular,MidGrade),
+           economic = mean(pct_pers_lt_pov,pct_unemp),
+           tax = mean(EstimatedSpecialRate,EstimatedCountyRate),
+           school = mean(public_school_count,private_school_count,college_num),
+           shopping = num_shoppingmall,
+           Cheap = price 
+           )
+
+county_data_recommend_for_shiny = county_data_recommend %>%
+    select(Cheap,safety,income,transportation,cpi,economic,tax,school,shopping)
+
+county = county_data[,1] %>% as.data.frame() 
+colnames(county) = "County"
+county_data_recommend_for_shiny = bind_cols(county,county_data_recommend_for_shiny)
+
+```
+
 
 
 
