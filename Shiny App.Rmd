@@ -8,19 +8,34 @@ suppressMessages(library(shiny))
 suppressMessages(library(shinythemes))
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyverse))
-suppressMessages(library(urbnmapr))
+suppressMessages(library(leaflet))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(scales))
+suppressMessages(library(lattice))
 ```
 
 ```{r}
 load("county_data.RData")
+load("county_plot.Rdata")
 ```
 
+Citation: https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
 
 ```{r}
-county_plot=urbnmapr::counties %>% 
-    rename(State=state_abbv,County=county_name) %>% 
-    mutate(County=str_replace_all(County,"County","") %>% 
-           str_trim(side = "both"))
+county_plot=county_data %>% 
+    left_join(county_plot, by=c("State","County")) %>% 
+    rename('Housing Price' = price,
+         'Income Per Capita' = Income_PerCapita,
+         'Crime Rate' = crime_rate_per_100000,
+         'Unemployment Rate' = pct_unemp,
+         'Num Of Colleges' = college_num,
+         'Num Of Public Schools' = public_school_count,
+         'Num Of Private Schools' = private_school_count,
+         'Hospital Rating' = hospital_rating,
+         'Num Of Shoppingmalls' = num_shoppingmall,
+         'Risk Level' = RiskLevel) %>% 
+    na.omit()
+    
 state_list = unique(county_data$State)
 
 
@@ -34,7 +49,6 @@ county_data = county_data %>%
          'Num Of Private Schools' = private_school_count,
          'Hospital Rating' = hospital_rating,
          'Num Of Shoppingmalls' = num_shoppingmall,
-         'Unemployment Rate' = pct_unemp,
          'Risk Level' = RiskLevel)
 
 variable_list = c("State",
@@ -45,14 +59,26 @@ variable_list = c("State",
                   "Housing Price",
                   "Hospital Rating",                  
                   "Num Of Colleges",
-                  "Income Per Capita",  
+                  "Income PerCapita",  
                   "Unemployment Rate",                    
                   "Num Of Public Schools",
                   "Num Of Private Schools",
                   "Num Of Shoppingmalls")
+
+vars=c("Population",
+       "Crime Rate",
+       "Risk Level",                  
+       "Housing Price",
+       "Hospital Rating",                  
+       "Num Of Colleges",
+       "Income PerCapita",  
+       "Unemployment Rate",                    
+       "Num Of Public Schools",
+       "Num Of Private Schools",
+       "Num Of Shoppingmalls")
 ```
 
-```{r}
+```{r shiny, warning=FALSE, message=FALSE}
 
 shinyApp(
   ui = tagList(
@@ -91,16 +117,38 @@ shinyApp(
                plotOutput("distribution")
              )),
     
-    tabPanel("Map View", 
-             sidebarPanel(
-               selectInput("feature", "Select A Plot Feature", 
-                           choices =c("Housing Price","Income Per Capita"), selected = 1),
-               actionButton("plot", "Plot"),
-               hr()),
-             mainPanel(
-               plotOutput("plot1")
-               )))
-    ),
+    ## create an interactive map
+    tabPanel("Interactive map", 
+             div(class="outer",
+
+      tags$head(
+        # Include our custom CSS
+        includeCSS("styles.css"),
+        includeScript("gomap.js")
+      ),
+
+      # If not using custom CSS, set height of leafletOutput to a number instead of percent
+      leafletOutput("map", width="100%", height="100%"),
+
+      # Shiny versions prior to 0.11 should use class = "modal" instead.
+      absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+        draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
+        width = 330, height = "auto",
+
+        h2("Variables explorer"),
+
+        selectInput("color", "Color", vars),
+        selectInput("size", "Size", vars, selected = "Housing Price")
+        
+        ),
+
+      tags$div(id="cite",
+        'Data compiled for ', tags$em('Coming Apart: The State of White America, 1960–2010'), ' by Charles Murray (Crown Forum, 2012).',"code from https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example"
+      )
+    )
+  )
+))
+,
   
   server = function(input, output, session){
     
@@ -115,24 +163,32 @@ shinyApp(
       }))
     
     ## panel 2
-    plotdata = eventReactive(
-      input$plot,{
-      county_data  %>% select(input$feature,State,County) %>% 
-              left_join(.,county_plot,by=c("State","County"))
-    })
+    # Create the map
+    output$map <- renderLeaflet({
+    leaflet() %>%
+      addTiles(
+        #urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+        attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+      ) %>%
+      setView(lng = -93.85, lat = 37.45, zoom = 4)
+  })
     
-    output$plot1 = renderPlot({
-    plotdata() %>%
-    ggplot(aes(x=long, y=lat, group = group, fill = price)) +
-    geom_polygon(color = NA) +
-        geom_polygon(data = urbnmapr::states, mapping = aes(long, lat, group = group),
-        fill = NA, color = "#ffffff") +
-    coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-    theme(legend.title = element_text(),
-        legend.key.width = unit(.5, "in"))+
-    labs(fill = "price") 
+    observe({
+    colorBy <- input$color
+    sizeBy <- input$size
 
-    })
+    colorData <- county_plot[[colorBy]]
+    pal <- colorBin("viridis", colorData, 7, pretty = FALSE)
+    radius <- county_plot[[sizeBy]] / max(county_plot[[sizeBy]]) * 30000
+    
+
+    leafletProxy("map", data = county_plot) %>%
+      clearShapes() %>%
+      addCircles(~Long, ~Lat, radius=radius, layerId=~Zipcode,
+        stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %>%
+      addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
+        layerId="colorLegend")
+  })
     
     # panel 3
     observeEvent(
@@ -174,7 +230,6 @@ shinyApp(
   }
   
 )
-
 ```
 
 ## Shiny App Details
