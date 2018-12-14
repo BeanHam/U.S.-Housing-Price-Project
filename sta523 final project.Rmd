@@ -893,7 +893,7 @@ rmse(y_test_pred, test$price)
 The neural network prediction outperforms the other models (Much lower RMSE and much higher R^2). So we decide to use the neural networks to be the final model to do the predictions. 
 
 
-Modelling Conclusion: 
+## Modelling Conclusion: 
 
 As we talked earlier, our ultimate goal of the modelling is two parts:
 
@@ -909,7 +909,7 @@ We will use these results for our later recommendation sections.
 
 
 
-Recommendation system:
+## Recommendation system:
 
 1. Find Overvalued and Undervalued Counties 
 
