@@ -93,6 +93,7 @@ For the Second goal, we got the important factors that will affect the housing p
 
 VII. Housing Recommendations 
 
+<<<<<<< HEAD
 For the housing Recommendations, we mainly have two parts:
 
 First part: Recommendating houses based on the deep learning model output
@@ -110,8 +111,12 @@ VIII. Visualizations
 
 
 VIIII. User Interface (Shiny)
+=======
+Based on the dataframe and modeling results, we created multiple visualizations to explicitely deliver informative insights, demonstrate exiciting and unique findings, and provide recommendations to the end users. The visualizations include tables, barplots, and map views. They serve different roles to meet different needs from end users. For instance, the table visualization contains general information of each county, such as income per capita, population, average housing price etc. It gives users an overall idea of what the county looks like. The average housing price bar plot provides users the chance to deeply look at the distribution of housing price of each county within a state. It is designed in an user-friendly approach, allowing them to specify the price range they are interested in. 
+>>>>>>> 3313579fe28aa3f4bf79389df7e3fdc6306be92a
 
 
+The shiny app serves as an interface to incorporate all the visualizations and provide instructions of how to use them. It allows users to specify different variables and aspects they are interested in and provide detailed information. More details can be refered to the "Shiny App.Rmd" file. 
 
 
 
@@ -119,30 +124,26 @@ Ten.  Conclusion.
 
 
 ```{r, warning = F, message = F, output = F}
-library(Quandl)
-library(readr)
-library(dplyr)
-library(rvest)
-library(stringr)
-library(xlsx)
-library(noncensus)
-library(rvest)
-library(tidyverse)
-library(sqldf)
-library(stringi)
-library(readxl)
-library(tools)
-library(gridExtra)
-library(BAS)
-library(randomForest)
-library(neuralnet)
+suppressMessages(library(Quandl))
+suppressMessages(library(readr))
+suppressMessages(library(rvest))
+suppressMessages(library(stringr))
+suppressMessages(library(xlsx))
+suppressMessages(library(noncensus))
+suppressMessages(library(sqldf))
+suppressMessages(library(stringi))
+suppressMessages(library(readxl))
+suppressMessages(library(tools))
+suppressMessages(library(gridExtra))
+suppressMessages(library(BAS))
+suppressMessages(library(randomForest))
+suppressMessages(library(neuralnet))
 suppressMessages(library(shiny))
 suppressMessages(library(shinythemes))
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyverse))
 '%ni%' <- Negate('%in%')
-library(fmsb)
-library(tidyverse)
+suppressMessages(library(fmsb))
 ```
 
 ## 1. base data
@@ -1033,16 +1034,28 @@ num_shoppingmall, college_num, MURDER, EstimatedCountyRate ,public_school_count,
            school = rowMeans(select(.,public_school_count,private_school_count,college_num)),
            shopping = num_shoppingmall,
            Cheap = price 
+<<<<<<< HEAD
            ) %>%
   select(Cheap,safety,income,transportation,cpi,economic,tax,school,shopping) %>%
   bind_cols(county,.)
   
+=======
+           )
+
+county_data_recommend_for_shiny = county_data_recommend %>%
+    select(Cheap,safety,income,transportation,cpi,economic,tax,school,shopping)
+
+county = county_data[,1:2] %>% as.data.frame() 
+colnames(county) = c("County","State")
+county_data_recommend_for_shiny = bind_cols(county,county_data_recommend_for_shiny)
+
+>>>>>>> 3313579fe28aa3f4bf79389df7e3fdc6306be92a
 ```
 
 
 ```{r}
 recommendation_for_shiny = county_data %>% 
-  select(County,recommend)
+  select(County,State,recommend)
 
 save(recommendation_for_shiny, file = "recommendation_part1.RData")
 save(county_data_recommend_for_shiny, file = "recommendation_part2.RData")
