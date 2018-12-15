@@ -24,23 +24,6 @@ load("recommendation_part2.RData")
 Citation: https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
 
 ```{r}
-county_plot=county_data %>% 
-    left_join(county_plot, by=c("State","County")) %>% 
-    rename('Housing Price' = price,
-         'Income Per Capita' = Income_PerCapita,
-         'Crime Rate' = crime_rate_per_100000,
-         'Unemployment Rate' = pct_unemp,
-         'Num Of Colleges' = college_num,
-         'Num Of Public Schools' = public_school_count,
-         'Num Of Private Schools' = private_school_count,
-         'Hospital Rating' = hospital_rating,
-         'Num Of Shoppingmalls' = num_shoppingmall,
-         'Risk Level' = RiskLevel) %>% 
-    na.omit()
-    
-state_list = unique(county_data$State)
-
-
 county_data = county_data %>% 
   rename('Housing Price' = price,
          'Income Per Capita' = Income_PerCapita,
@@ -51,7 +34,15 @@ county_data = county_data %>%
          'Num Of Private Schools' = private_school_count,
          'Hospital Rating' = hospital_rating,
          'Num Of Shoppingmalls' = num_shoppingmall,
-         'Risk Level' = RiskLevel)
+         'Risk Level' = RiskLevel) %>% 
+  left_join(.,recommendation_for_shiny, by=c("County","State"))
+
+county_plot=county_data %>% 
+    left_join(county_plot, by=c("State","County")) %>% 
+    na.omit()
+    
+state_list = unique(county_data$State)
+
 
 variable_list = c("State",
                   "County",
@@ -129,10 +120,7 @@ shinyApp(
         includeScript("gomap.js")
       ),
 
-      # If not using custom CSS, set height of leafletOutput to a number instead of percent
       leafletOutput("map", width="100%", height="100%"),
-
-      # Shiny versions prior to 0.11 should use class = "modal" instead.
       absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
         draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
         width = 330, height = "auto",
@@ -148,7 +136,37 @@ shinyApp(
         'Data compiled for ', tags$em('Coming Apart: The State of White America, 1960–2010'), ' by Charles Murray (Crown Forum, 2012).',"code from https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example"
       )
     )
-  )
+  ),
+  
+  ## recommendation system
+  tabPanel("recommendation level", 
+             sidebarPanel(
+               selectInput("state_rd", "Select A State", choices = state_list, selected = 1),
+               actionButton("recommend", "Get recommendation")
+               ),
+             mainPanel(
+               plotOutput("recommendation_level")
+               )),
+
+  tabPanel("county rank", 
+             sidebarPanel(
+               checkboxGroupInput("variable_rd","Select variables to rank", c("Cheap","safety","income","transportation","cpi","economic","tax","school","shopping")),
+               actionButton("rank", "Get County Rank"),
+               hr(),
+               h3("Variable Dictionary: "),
+               helpText("- Cheap: "),
+               helpText("- Safety: "),
+               helpText("- Income: "),
+               helpText("- Transportation:"),
+               helpText("- CPI: "),
+               helpText("- Economic: "),
+               helpText("- Tax: "),
+               helpText("- School: "),
+               helpText("- Shopping: ")
+               ),
+             mainPanel(
+               DT::dataTableOutput("table2")
+               ))
 ))
 ,
   
@@ -164,7 +182,7 @@ shinyApp(
       tabledata()
       }))
     
-    ## panel 2
+    ## panel 3
     # Create the map
     output$map <- renderLeaflet({
     leaflet() %>%
@@ -190,9 +208,32 @@ shinyApp(
         stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %>%
       addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
         layerId="colorLegend")
+    })
+    
+  # Show a popup at the given location
+  showZipcodePopup <- function(zipcode, lat, lng) {
+    selectedZip <- county_plot[county_plot$Zipcode == zipcode,]
+    content <- as.character(tagList(
+      tags$h4(selectedZip$recommend),
+      tags$strong(HTML(sprintf("%s, %s %s",
+        selectedZip$City, selectedZip$County, selectedZip$State)))
+    ))
+    leafletProxy("map") %>% addPopups(lng, lat, content, layerId = zipcode)
+  }
+
+  # When map is clicked, show a popup with city info
+  observe({
+    leafletProxy("map") %>% clearPopups()
+    event <- input$map_shape_click
+    if (is.null(event))
+      return()
+
+    isolate({
+      showZipcodePopup(event$id, event$lat, event$lng)
+    })
   })
     
-    # panel 3
+    # panel 2
     observeEvent(
       input$state_hist, {
         histdata = county_data %>% filter(State == input$state_hist)
@@ -229,7 +270,36 @@ shinyApp(
         theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1)) +
         scale_fill_gradient(low="lightblue", high="pink")
       })
-  }
+  
+    ### panel 4
+    barplotdata = eventReactive(
+      input$recommend,{
+        county_data %>% 
+        filter(State==input$state_rd) %>% 
+        select(County,recommend)
+    })
+    
+    output$recommendation_level = renderPlot({
+      barplot=barplotdata()
+     
+        ggplot(data = barplot,aes(x = County, 
+                 y = recommend))+geom_bar(stat="identity")+xlab("County") +
+        ylab("recommendation level")+theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1)) +coord_flip()
+      })
+  
+    
+    
+    ### panel5 
+    tabledata2 = eventReactive(
+      input$rank,{
+     tabledata2=county_data_recommend_for_shiny %>% select(County,State,input$variable_rd) 
+    })
+    
+    output$table2 = DT::renderDataTable(DT::datatable({
+      tabledata2()
+      }))
+    
+    }
   
 )
 ```
@@ -241,9 +311,20 @@ There are severals panels in our the shiy app, with each one containing differen
 
 2. County Housing Price: considering that some users are interested in the distribution of housing prices in different counties in a state, we created this panel. Users chooses a state and the lower and upper bound of the housing price will update automatically. Then users can specify the range of prices they want to look at and a bar graph (sorted by the price in descending order) will show up, with counties on the x-axis. 
 
+3. Interactive Map
+Another designed function of our shiny App is the interactive map. In this tabpanel users can select two interested variables from the previous dataset we obtained and they will be plotted on the US map. After looking at an excellent example called "SuperZip" from shiny gallery, we used leaflet package to draw this elegant map but to find the location of each county we need to use its coordinates. To solve this task we used the longitude, latitude and Zipcode of some cities in one county and cities in one county will have identical values such as housing price,income per capita.
+In the server function we created a map first and then drew tiny circles representing cities on the top of previous map layer. The radius and the color of each circle is controlled by input variables so that our users can compare the values by the circle size and  color. The reason why we decided to change the color and size at the same time is to explore the interactions between the selected two variables. In addition we added our recommendation results to a popup window.
 
 
 
+
+```{r}
+test1=c("a","b")
+test2=c(1:2)
+test3=c(3:4)
+t=rbind(test1,test2,test3) %>% as.data.frame()
+
+```
 
 
 
