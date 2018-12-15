@@ -91,13 +91,28 @@ For the Second goal, we got the important factors that will affect the housing p
 8. Number of shopping malls
 
 
-VII. Visualizations 
+VII. Housing Recommendations 
+
+For the housing Recommendations, we mainly have two parts:
+
+First part: Recommendating houses based on the deep learning model output
+
+Compare the predicted value of Housing to the real price of Housing and set counties into 7 categories: Highly Highly recommend, Highly Recommend, Recommend, Fair Price, Not Recommend, Highly not recommend and Highly Highly not recommend. We divide these categories base on the different value between predicted value and the real price (prediction - price). Because we believe by our model and by the data we get, we can predict the value of housing in different counties. Therefore, we can use this value to see whether the housing price in the county is overvalued or undervalued. For example, if the predicted value for county a is 3 but the real price of this county is only 0.5, we can say that this county is undervalued and we will highly recommend our audience to buy the house from this county because it will be a great investment.
+
+Second Part: Recommendating houses based on the important variables selected by the audience 
+
+Since we have acquire the important variables that people will consider when they are buying the houses in the linear model sections, we will use these variables to make a recommendation list. We give each county a score for each variables, so for example, in county a the safety score is 90 and in county b it's 78. The Audiance can select the variable they cared in the Shiny user interface and the app will return a list of recommendation houses based on the highest average scores on the variables selected. 
+
+The output will be the top counties and the average scores. So the audience can have an idea on which county should they consider to buy the houses based on the variables they selected. Besides the 8 important variables we concluded in the linear model section, we also include the variable price in case that the audience want cheaper houses. 
 
 
-VIII. User Interface (Shiny)
+VIII. Visualizations 
 
 
-VIIII. Housing Recommendations 
+VIIII. User Interface (Shiny)
+
+
+
 
 
 Ten.  Conclusion. 
@@ -125,7 +140,6 @@ suppressMessages(library(shiny))
 suppressMessages(library(shinythemes))
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyverse))
-suppressMessages(library(urbnmapr))
 '%ni%' <- Negate('%in%')
 library(fmsb)
 library(tidyverse)
@@ -974,54 +988,55 @@ Economic situation (Unemployment rate and poverty rate) and Number of shopping m
 
 I want to add a new variable to our recommendation system: price. Obviously, people may consider the price when they are choosing their new homes.
 
-We first select out important variables we concluded in the linear model which can illusrate each important factors:
+We first select out important variables we concluded in the linear model which can illusrate each important factors. Next, we give each observations a rating in each column from 0-100 as illustrated in the function rating. Basically it's map each numeric levels in the column to a score from 1 to the total numbers of levels in that column and then transform it into a 100 point scale. 
+
+Since some columns are negative, which means less the value means better. So for these columns, we use 100 - original ratings so that then 0 becomes 100 and 100 becomes 0 and for the other numbers vice versa. 
+
+After doing all of these, we calculate the rowsum of different corresponding columns and get a final average rating. For example, safety is correlated to BURGLRY,ROBBERY,LARCENY,MURDER,CPOPCRIM, so we calculate the average raing of these 5 variables and use that mean to represent the overall rating of safety for that county. 
+
+At last, we bind these rating with the corresponding County(with State) and prepared it into a final dataset ready in Shiny. 
 
 ```{r}
-county_data_recommend = county_data %>% 
+rating = function(v){
+  mapvalues(v,sort(unique(v)),(1:length(unique(v)))*100/(length(unique(v))))
+}
+
+negative = function(x){
+  x = 100 - x
+}
+
+county = county_data[,1:2] %>% as.data.frame() 
+
+library(plyr)
+county_data_recommend_for_shiny = county_data %>% 
     select(price, Income_PerCapita, Regular, pct_pub_transport_log,EstimatedSpecialRate, BURGLRY, ROBBERY, LARCENY, Median_Family_Income, Premium, MidGrade, pct_pers_lt_pov,pct_unemp,
-num_shoppingmall, college_num, MURDER, EstimatedCountyRate ,public_school_count,CPOPCRIM, ryprop, private_school_count) 
-
-
-county_data_recommend = county_data_recommend %>%
-    mutate(price = 100 - ntile(price, 100),
-        Income_PerCapita = ntile(Income_PerCapita, 100),
-        pct_pub_transport_log = ntile(pct_pub_transport_log, 50) * 2,
-        EstimatedSpecialRate = 100 - ntile(EstimatedSpecialRate, 50) * 2,
-        BURGLRY = 100 - ntile(BURGLRY, 50) * 2,
-        ROBBERY = 100 - ntile(ROBBERY, 50) * 2,
-        LARCENY = 100 - ntile(LARCENY, 50) * 2,
-        Premium = 100 - ntile(Premium, 50) * 2,
-        Regular = 100 - ntile(Regular, 50) * 2,
-        MidGrade = 100 - ntile(MidGrade, 50) * 2,
-        pct_pers_lt_pov = 100 - ntile(pct_pers_lt_pov, 100),
-        pct_unemp = 100 - ntile(pct_unemp, 100),
-        num_shoppingmall = ntile(num_shoppingmall, 16) * 6,
-        college_num = ntile(college_num, 10) * 10,
-        MURDER = 100 - ntile(MURDER, 50) * 2,
-        EstimatedCountyRate = 100 - ntile(EstimatedCountyRate, 50) * 2,
-        public_school_count = ntile(public_school_count, 10) * 10,
-        private_school_count = ntile(private_school_count, 10) * 10,
-        CPOPCRIM = 100 - ntile(CPOPCRIM, 100),
-        ryprop = ntile(ryprop,100)
-        ) %>% rowwise() %>%
-    mutate(safety = mean(BURGLRY,ROBBERY,LARCENY,MURDER,CPOPCRIM),
+num_shoppingmall, college_num, MURDER, EstimatedCountyRate ,public_school_count,CPOPCRIM, ryprop, private_school_count) %>%
+  sapply(.,rating) %>% as.data.frame() %>% mutate(
+    EstimatedSpecialRate = negative(EstimatedSpecialRate),
+    BURGLRY = negative(BURGLRY),
+    ROBBERY = negative(ROBBERY),
+    LARCENY = negative(LARCENY),
+    Premium = negative(Premium),
+    MidGrade = negative(MidGrade),
+    pct_pers_lt_pov = negative(pct_pers_lt_pov),
+    pct_unemp = negative(pct_unemp),
+    MURDER = negative(MURDER),
+    EstimatedCountyRate = negative(EstimatedCountyRate),
+    CPOPCRIM = negative(CPOPCRIM)
+  ) %>% rowwise() %>%
+    mutate(safety = rowMeans(select(.,BURGLRY,ROBBERY,LARCENY,MURDER,CPOPCRIM)),
            income = Income_PerCapita,
-           transportation = mean(pct_pub_transport_log,ryprop),
-           cpi = mean(Premium,Regular,MidGrade),
-           economic = mean(pct_pers_lt_pov,pct_unemp),
-           tax = mean(EstimatedSpecialRate,EstimatedCountyRate),
-           school = mean(public_school_count,private_school_count,college_num),
+           transportation = rowMeans(select(.,pct_pub_transport_log,ryprop)),
+           cpi = rowMeans(select(.,Premium,Regular,MidGrade)),
+           economic = rowMeans(select(.,pct_pers_lt_pov,pct_unemp)),
+           tax = rowMeans(select(.,EstimatedSpecialRate,EstimatedCountyRate)),
+           school = rowMeans(select(.,public_school_count,private_school_count,college_num)),
            shopping = num_shoppingmall,
            Cheap = price 
-           )
-
-county_data_recommend_for_shiny = county_data_recommend %>%
-    select(Cheap,safety,income,transportation,cpi,economic,tax,school,shopping)
-
-county = county_data[,1] %>% as.data.frame() 
-colnames(county) = "County"
-county_data_recommend_for_shiny = bind_cols(county,county_data_recommend_for_shiny)
-
+           ) %>%
+  select(Cheap,safety,income,transportation,cpi,economic,tax,school,shopping) %>%
+  bind_cols(county,.)
+  
 ```
 
 
