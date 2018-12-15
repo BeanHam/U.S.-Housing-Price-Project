@@ -17,6 +17,8 @@ suppressMessages(library(lattice))
 ```{r}
 load("county_data.RData")
 load("county_plot.Rdata")
+load("recommendation_part1.RData")
+load("recommendation_part2.RData")
 ```
 
 Citation: https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
