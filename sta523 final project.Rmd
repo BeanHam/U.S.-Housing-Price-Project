@@ -93,9 +93,11 @@ For the Second goal, we got the important factors that will affect the housing p
 
 VII. Visualizations 
 
+Based on the dataframe and modeling results, we created multiple visualizations to explicitely deliver informative insights, demonstrate exiciting and unique findings, and provide recommendations to the end users. The visualizations include tables, barplots, and map views. They serve different roles to meet different needs from end users. For instance, the table visualization contains general information of each county, such as income per capita, population, average housing price etc. It gives users an overall idea of what the county looks like. The average housing price bar plot provides users the chance to deeply look at the distribution of housing price of each county within a state. It is designed in an user-friendly approach, allowing them to specify the price range they are interested in. 
 
 VIII. User Interface (Shiny)
 
+The shiny app serves as an interface to incorporate all the visualizations and provide instructions of how to use them. It allows users to specify different variables and aspects they are interested in and provide detailed information. More details can be refered to the "Shiny App.Rmd" file. 
 
 VIIII. Housing Recommendations 
 
