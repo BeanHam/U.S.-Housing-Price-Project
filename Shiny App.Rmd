@@ -2,7 +2,7 @@
 title: "Shiny App"
 output: html_document
 ---
-```{r}
+```{r, echo=FALSE}
 #devtools::install_github("UrbanInstitute/urbnmapr")
 suppressMessages(library(shiny))
 suppressMessages(library(shinythemes))
@@ -14,7 +14,7 @@ suppressMessages(library(scales))
 suppressMessages(library(lattice))
 ```
 
-```{r}
+```{r, echo=FALSE}
 load("county_data.RData")
 load("county_plot.Rdata")
 load("recommendation_part1.RData")
@@ -23,7 +23,7 @@ load("recommendation_part2.RData")
 
 Citation: https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
 
-```{r}
+```{r, echo=FALSE}
 county_data = county_data %>% 
   rename('Housing Price' = price,
          'Income Per Capita' = Income_PerCapita,
@@ -79,6 +79,8 @@ vars=c("Population",
 ```
 
 
+
+
 ```{r shiny, warning=FALSE, message=FALSE}
 
 shinyApp(
@@ -88,7 +90,10 @@ shinyApp(
     "U.S. County Housing Price",
     tabPanel("County Outlook", 
              sidebarPanel(
-               selectInput("state", "Select A State", choices = state_list, selected = 1),
+               selectInput("state", 
+                           "Select A State", 
+                           choices = state_list, 
+                           selected = 1),
                checkboxGroupInput("variable","Select variables to view", variable_list),
                actionButton("update", "Update"),
                hr(),
@@ -105,11 +110,14 @@ shinyApp(
     
     tabPanel("County Housing Price",
              sidebarPanel(
-               selectInput("state_hist", "Select A State", choices = state_list, selected = 1),
+               selectInput("state_hist", 
+                           "Select A State", 
+                           choices = state_list, 
+                           selected = 1),
                sliderInput("slide", 
                            label = "Choose Your Price Range", 
                            min = 0.406, max = 4, value = c(0.5, 0.6)),
-               actionButton("histogram", "Get Housing Distribution"),
+               actionButton("bargraph", "Get Housing Price Distribution"),
                hr(),
                h3("Variable Dictionary: "),
                helpText("- Housing Price: $1000/m^2")
@@ -117,6 +125,7 @@ shinyApp(
              mainPanel(
                plotOutput("distribution")
              )),
+    
     
     ## create an interactive map
     tabPanel("Interactive map", 
@@ -148,10 +157,10 @@ shinyApp(
     
     
     ## recommendation system
-    tabPanel("recommendation level", 
+    tabPanel("Recommendation Level -- From Modeling", 
              sidebarPanel(
                selectInput("state_rd", "Select A State", choices = state_list, selected = 1),
-               actionButton("recommend", "Get recommendation"),
+               actionButton("recommend", "Get Recommendation"),
                hr(),
                h4("Recommendation Level Instruction: "),
                helpText("The larger the level, the more highly the county is recommended."),
@@ -170,7 +179,7 @@ shinyApp(
                )),
     
     
-    tabPanel("county rank", 
+    tabPanel("Recommendation Score -- From Dataset", 
              sidebarPanel(
                selectInput("rank_state", 
                            "Select A State", 
@@ -181,7 +190,7 @@ shinyApp(
                checkboxGroupInput("variable_rd",
                                   "Select variables to rank",
                   c("Cheap","safety","income","transportation","cpi","economic","tax","school","shopping")),
-               actionButton("rank", "Get County Rank"),
+               actionButton("rank", "Get Recommendation Score"),
                hr(),
                h3("Variable Dictionary: "),
                helpText("- Cheap: the cheaper the housing price, the higher the score"),
@@ -224,7 +233,7 @@ shinyApp(
       })
     
     histdata = eventReactive(
-      input$histogram, {
+      input$bargraph, {
         county_data %>% filter(State == input$state_hist,
                                `Housing Price`<= input$slide[2],
                                `Housing Price` >= input$slide[1])
@@ -393,38 +402,55 @@ shinyApp(
 )
 ```
 
+Citation: 
+1. https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix
+2. https://stackoverflow.com/questions/17838709/scale-and-size-of-plot-in-rstudio-shiny
+3. https://stackoverflow.com/questions/23233497/outputting-multiple-lines-of-text-with-rendertext-in-r-shiny
+
+
 ## Shiny App Details
-There are severals panels in our the shiy app, with each one containing different information. 
+There are five different panels in our shiy app, with each one containing different information and serving different functions. The steps to build these panals and the functionalities of them will be articulated in details:  
 
-1. County Outlook: this panel displays a table containing the general information of some indicators for each county. This panel takes the cleaned dataframe as input and users can select which state they want to look at. Then, they can specify the variables they are interested in. By clicking 'Update', the table will show up on the right. Users can further do some search, filter, and sort on the table. 
+The overall set up of the shiny app is a `navbarPage` under the `tagList`. We created five `tabPanel` with the page and applied the theme "cosmo". 
 
-2. County Housing Price: considering that some users are interested in the distribution of housing prices in different counties in a state, we created this panel. Users chooses a state and the lower and upper bound of the housing price will update automatically. Then users can specify the range of prices they want to look at and a bar graph (sorted by the price in descending order) will show up, with counties on the x-axis. 
+### 1. County Outlook: 
 
-3. Interactive Map
-Another designed function of our shiny App is the interactive map. In this tabpanel users can select two interested variables from the previous dataset we obtained and they will be plotted on the US map. After looking at an excellent example called "SuperZip" from shiny gallery, we used leaflet package to draw this elegant map but to find the location of each county we need to use its coordinates. To solve this task we used the longitude, latitude and Zipcode of some cities in one county and cities in one county will have identical values such as housing price,income per capita.
-In the server function we created a map first and then drew tiny circles representing cities on the top of previous map layer. The radius and the color of each circle is controlled by input variables so that our users can compare the values by the circle size and  color. The reason why we decided to change the color and size at the same time is to explore the interactions between the selected two variables. In addition we added our recommendation results to a popup window.
+- Construction: the first panel is called "County Outlook", which contains a table with general information of each county, such as GDP, population, unemployment rate etc. In the `sidebarPanel`, users can select whichever state they want to look at and choose the variables they are interested in. We also added some `helpText` to explain each variable to help users understand. The `mainPanel` displays a table.  
 
+- Functionality: This panel gives users an overall idea of what each county looks like. Instead of just showing the average housing price for each county, they can capture more useful information. Additionally, users can sort any column and search any key word on the table.
 
-```{r}
+- Usage: Users choose a state and specify the variables they are interested from the provided list. By clicking the "update" button, the table will show up.
 
-m = tabledata2=county_data_recommend_for_shiny %>% 
-  filter(State == "CA") %>% 
-  select(-State, -County) %>% 
-  mutate(average = rowSums(.)/ncol(.))
+### 2. County Housing Price: 
 
-county_data_recommend_for_shiny %>% filter(State == "CA")
-county_data %>% filter(State == "CA")
-,
-         location = county_data %>%
-           filter(.$State == "CA") %>%
-           select(.$County, .$State) %>% 
-           paste(.$County, ",", .$State)) %>%  
-  arrange(desc(average)) %>% 
-  .[1:20, ]
+- Construction: similarly, we added a `selectInput`, allowing users to select a state they want to look at. Then we incorporated a`sliderInput` for users to specify the housing price range. Since the range for each state is different, we used an `obserEvent` function to update the max and min value of sliderInput once there is anything changed in "state_list". Once the "histogram" button is triggered, the `mainPanel` will generate a barplot, with `County` on the horizontal axis and `Housing Price` on the vertical axis.
 
-```
+- Funcationality: considering that some users are interested in the distribution of housing prices in different counties in a state, we created this panel. It can help users narrow the search scope of different locations.
+
+- Usage: Choose a state and the slider range will automatically update. Then move the slider and specify the range you want to look at. Then click "Get Housing Price Distribution" button.
+
+### 3. Interactive Map
+
+- Another designed function of our shiny App is the interactive map. In this tabpanel users can select two interested variables from the previous dataset we obtained and they will be plotted on the US map. After looking at an excellent example called "SuperZip" from shiny gallery, we used leaflet package to draw this elegant map but to find the location of each county we need to use its coordinates. To solve this task we used the longitude, latitude and Zipcode of some cities in one county and cities in one county will have identical values such as housing price,income per capita.
+
+- In the server function we created a map first and then drew tiny circles representing cities on the top of previous map layer. The radius and the color of each circle is controlled by input variables so that our users can compare the values by the circle size and  color. The reason why we decided to change the color and size at the same time is to explore the interactions between the selected two variables. In addition we added our recommendation results to a popup window.
 
 
+### 4. Recommendation Level -- From Modeling
+
+- Construction: similar as before, we added a `selectInput` for users to choose a state. We alsp provided the explanations of different recommendation levels using `helpText`. The `mainPanel` contains a `plotOutput` and a `htmlOutput`. We used a `eventReactive` function to create a new dataframe only containing the observations of the state users specify. Afterthen, when the "recommend" button is clicked, a barplot will be generated, with different recommendation level grouped together. 
+
+- Funcationality: this panel is used to show what is the recommended county from the modeling step. If the real price and predictive price are very close for a county, then we say the county is recommended (based on the magnitude of the difference, we classify the level of recommendation). This will give users some idea of whether a county is worth an investment or not in general. 
+
+- Usage: Choose a state and click "Get Recommendation". Then a bar plot will show up.
+
+### 5. Recommendation Score -- From Dataset
+
+- Construction: In the last panel, we used a `selectInput` for state choice and used `checkboxGroupInput` for users to choose different variables. Same as the 4th panel, we added some `helpText` to help readers understand what are those variables. The `mainPanel` contains a `htmlOutput` and a `plotOutput`. In the mainPanel, we used an `evenReactive` function. Whenever the input state changes, a dataframe will be generated correspondingly, with the overall recommendation score as a variable. Then a bar plot will be created, with County&State on the horizontal axis and recommendation score on the vertical axis.
+
+- Functionality: we used a different datafram for this panel. Based on the values of each variable in the original dataset, we assigned a generalized score for each value of that variable from 0 - 100. And then we average the generalized scores of the variables that users choose to calculate the overall score. The recommendation from 4th panel is based on the modeling result, showing how close the predicted value is to the real value. However, in this panel, users can specify the variables to be used in the recommendation system and we calculate the score in the backstage. The higher the score, the more recommended the county is.
+
+- Usage: select one or more states and click "Get Recommendation Score".
 
 
 
