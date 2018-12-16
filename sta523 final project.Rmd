@@ -139,7 +139,7 @@ suppressMessages(library(lattice))
 '%ni%' <- Negate('%in%')
 ```
 
-## 1. base data
+## 1. Base data
 
 The base data, which is the housing price data across different counties is the base data we use for this project. 
 
@@ -182,7 +182,7 @@ price_2017 = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_pe
 ```
 
 
-## 3. hilton data within the country
+## 3. Hilton data within the country
 
 For this dataset, we want to get the numbers of Hilton in each counties. Actually the data we want to get is the hotel data, because we think that whether there's a large hotel inside the county can implies whether that's prosperous county. Often a prosperous county indicates high median housing price because more people are tend to live there. Therefore, we scrape the hilton data from the hilton website.
 
@@ -242,7 +242,7 @@ price_2017 = sapply(urls, function(url){
 ```
 
 
-## 4. clean the dataset 
+## 4. Clean the dataset 
 
 In order to merge more easily and efficiently for the later chuncks, we want to modify the County column in both base datasets and the zip_county_lookup(the matching dataset.)
 
@@ -260,7 +260,7 @@ zip_county_lookup = clean_county(zip_county_lookup) %>%
   select(ZIP, STATE, County, CITY)
 ```
 
-## 5. crime rate data
+## 5. Crime rate data
 
 For this chunck we want to get the crime rate data for each county. Cause safety is one of the most important factor to consider when people are buying houses to live. No one wants to live in a very dangerous place. 
 
@@ -283,7 +283,7 @@ price_2017 = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
     left_join(price_2017, ., by=c('County','State'))
 ```
 
-## 6. tax rate data
+## 6. Tax rate data
 
 We decide that the tax rate is also a very important indicator to the housing price because people may want to live in the places with lower tax rates. So we get the online data sources for the tax rates for all zips in the United States.
 
@@ -302,7 +302,7 @@ price_2017 = list.files(paste0(getwd(), "/TAXRATES_ZIP5"), pattern = "*.csv") %>
   left_join(price_2017, ., by = c('County','State')) 
 ```
 
-## 7. gasoline price data
+## 7. Gasoline price data
 
 We think that gasoline price can be a very interesting indicator that can show the price of the housing. This was the result illustrated by one of the paper we read. Gasoline price can somehow reflect an area's CPI and thus making an impact on the housing price.
 
@@ -331,7 +331,7 @@ price_2017 = data.frame(State = get_gasoline(1), Regular = get_gasoline(2),
   left_join(price_2017, ., by = 'State')
 ```
 
-## 8. number of colleges
+## 8. Number of colleges
 
 We think that the number of college is also a very important indicator to the price of the houses because college will attract many students coming from different places in the world to that county and these students need place to live. 
 
@@ -375,7 +375,7 @@ price_2017 = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>%
   mutate_all(funs(replace(., is.na(.), 0)))
 ```
 
-## 10. shopping mall data 
+## 10. Shopping mall data 
 
 Number of Shopping mall is an important indicator to the housing price because of 
 
@@ -1400,7 +1400,7 @@ Citation:
 
 
 ## Instruction
-Since the shiny app cannot be knitted in the project.rmd file due to directory changes, we separate this Shiny App.rmd file to show the shiny app we made. To use the shiny app, simply run all the chunks and it will automatically show up. 
+Since the shiny app cannot be knitted in the project.rmd file due to directory changes, we separate an "app.R" file to show the shiny app we made. To use the shiny app, simply run the R file and the application will automatically show up. 
 
 ## Shiny App Details
 There are five different panels in our shiy app, with each one containing different information and serving different functions. The steps to build these panals and the functionalities of them will be articulated in details:  

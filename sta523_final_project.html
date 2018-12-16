@@ -9,6 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
+<meta name="author" content="Ziqian Fu, Lingxi Song, Zhen Han Si, Bin Han, Henry Yuren Zhou" />
 
 
 <title>STA 523 Final Project</title>
@@ -306,6 +307,7 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">STA 523 Final Project</h1>
+<h4 class="author"><em>Ziqian Fu, Lingxi Song, Zhen Han Si, Bin Han, Henry Yuren Zhou</em></h4>
 
 </div>
 
@@ -380,7 +382,7 @@ $(document).ready(function () {
 <p>The shiny app serves as an interface to incorporate all the visualizations and provide instructions of how to use them. It allows users to specify different variables and aspects they are interested in and provide detailed information. More details can be refered to the “Shiny App.Rmd” file.</p>
 </div>
 <div id="base-data" class="section level2">
-<h2>1. base data</h2>
+<h2>1. Base data</h2>
 <p>The base data, which is the housing price data across different counties is the base data we use for this project.</p>
 <p>This dataset contains the time series data about the housing price starting from 2013 to 2017. However, we only need the median housing price for each counties in Jan 2017 for the analyze.</p>
 <p>Because of that, the variables we scrape later also are data presented in 2017.</p>
@@ -411,7 +413,7 @@ $(document).ready(function () {
   merge(price_2017, ., by = c('County', 'State'))</code></pre>
 </div>
 <div id="hilton-data-within-the-country" class="section level2">
-<h2>3. hilton data within the country</h2>
+<h2>3. Hilton data within the country</h2>
 <p>For this dataset, we want to get the numbers of Hilton in each counties. Actually the data we want to get is the hotel data, because we think that whether there’s a large hotel inside the county can implies whether that’s prosperous county. Often a prosperous county indicates high median housing price because more people are tend to live there. Therefore, we scrape the hilton data from the hilton website.</p>
 <p>Just as we did in the homework, we first get all Urls for different hiltons acrossing the country and within these urls, we scrape the location of each hotels. However, we dont need the whole location because that’s useless for us. We only need to know which counties it belongs.</p>
 <p>Therefore, we only need the zipcode within the location to match the hotel to the county. So we manipulate the location with several stringr functions such as str_replace, strsplit, substr to only get all ziocodes for all hiltons in the United States.</p>
@@ -461,7 +463,7 @@ price_2017 = sapply(urls, function(url){
   mutate_all(funs(replace(., is.na(.), 0)))</code></pre>
 </div>
 <div id="clean-the-dataset" class="section level2">
-<h2>4. clean the dataset</h2>
+<h2>4. Clean the dataset</h2>
 <p>In order to merge more easily and efficiently for the later chuncks, we want to modify the County column in both base datasets and the zip_county_lookup(the matching dataset.)</p>
 <p>For both datasets, we remove County, Borough, Parish, Munipality, Municipio, Island and We replace all “city” by “City”. Now the two datasets’ County column are identical and easy to merge in the later tasks.</p>
 <pre class="r"><code>clean_county = function(df){
@@ -475,7 +477,7 @@ zip_county_lookup = clean_county(zip_county_lookup) %&gt;%
   select(ZIP, STATE, County, CITY)</code></pre>
 </div>
 <div id="crime-rate-data" class="section level2">
-<h2>5. crime rate data</h2>
+<h2>5. Crime rate data</h2>
 <p>For this chunck we want to get the crime rate data for each county. Cause safety is one of the most important factor to consider when people are buying houses to live. No one wants to live in a very dangerous place.</p>
 <p>Therefore, we find out the crime dataset from the online sources and we acquire the safety related variables such as crime percent, murder rate, rate rate, robbery rate, theft rate etc.</p>
 <p>We clean the crime dataframe and merge it into the base dataset. Since in the crimerate dataset, the county and state are stick together: aaa county, xx state. Therefore, we use strsplit and mutate to divide the county and state and we use the clean_county function we defined above to clean the crime_data dataframe.After that, we merge it with the base dataset.</p>
@@ -492,7 +494,7 @@ zip_county_lookup = clean_county(zip_county_lookup) %&gt;%
     left_join(price_2017, ., by=c('County','State'))</code></pre>
 </div>
 <div id="tax-rate-data" class="section level2">
-<h2>6. tax rate data</h2>
+<h2>6. Tax rate data</h2>
 <p>We decide that the tax rate is also a very important indicator to the housing price because people may want to live in the places with lower tax rates. So we get the online data sources for the tax rates for all zips in the United States.</p>
 <p>However, that data is a zipfile and after unzip it, it becomes a folder. So we first read all csv data into one single dataframe and we join it with the counties by using the zip_county_lookup. We choose the appropriate varialbes that can illustrate the tax rate and use {.[!duplicated(.[,1:2]), ]} as to filter out only unique Counties.</p>
 <p>Finally, we merge that tax rate dataset with our base dataset.</p>
@@ -506,7 +508,7 @@ zip_county_lookup = clean_county(zip_county_lookup) %&gt;%
   left_join(price_2017, ., by = c('County','State')) </code></pre>
 </div>
 <div id="gasoline-price-data" class="section level2">
-<h2>7. gasoline price data</h2>
+<h2>7. Gasoline price data</h2>
 <p>We think that gasoline price can be a very interesting indicator that can show the price of the housing. This was the result illustrated by one of the paper we read. Gasoline price can somehow reflect an area’s CPI and thus making an impact on the housing price.</p>
 <p>So we find a website containing the gasoline price for each states in the United States (We tried very hard but we cannot find the average gasoline price by County unless we have to pay 50+ dollar for it). We write the function get_gasoline to scrape the data from this website and to directly construct a dataframe by using the data scraped by this function.</p>
 <p>However, in the website the price is stored as for example: $3.566. This is a factor level. Therefore, we use the gsub to remove all dollar signs and change all the classes to the numeric.</p>
@@ -529,7 +531,7 @@ price_2017 = data.frame(State = get_gasoline(1), Regular = get_gasoline(2),
   left_join(price_2017, ., by = 'State')</code></pre>
 </div>
 <div id="number-of-colleges" class="section level2">
-<h2>8. number of colleges</h2>
+<h2>8. Number of colleges</h2>
 <p>We think that the number of college is also a very important indicator to the price of the houses because college will attract many students coming from different places in the world to that county and these students need place to live.</p>
 <p>So we scrape the data from the IPEDS Data Center to get all universities/colleges in the country and their corresponding cities. Then we use the data zip_county_lookup again to get the reference from cities to counties. We dont need the first column (school IDS) and we dont need the first row (title and columnnames).</p>
 <p>After matching these schools with their corresponding counties we summarize the number of colleges in each counties and finally we merge that college dataset to our base dataset. We replace NA with 0s.</p>
@@ -563,7 +565,7 @@ price_2017 = read_html(&quot;IPEDS Data Center.html&quot;) %&gt;%
   mutate_all(funs(replace(., is.na(.), 0)))</code></pre>
 </div>
 <div id="shopping-mall-data" class="section level2">
-<h2>10. shopping mall data</h2>
+<h2>10. Shopping mall data</h2>
 <p>Number of Shopping mall is an important indicator to the housing price because of</p>
 <p>1: if a county has one or more shopping mall it can at least show it’s a prosperous county</p>
 <p>2: Shopping mall itself can attract people come/ travel to that county</p>
@@ -1204,6 +1206,420 @@ county_data_recommend_for_shiny = county_data %&gt;%
   select(Cheap, safety, income, transportation, cpi, 
          economic, tax, school, shopping) %&gt;%
   bind_cols(county, .)</code></pre>
+<pre class="r"><code>load(&quot;county_data.RData&quot;)
+load(&quot;county_plot.Rdata&quot;)
+load(&quot;recommendation1.Rdata&quot;)
+load(&quot;recommendation2.Rdata&quot;)</code></pre>
+<p>Citation: <a href="https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example" class="uri">https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example</a></p>
+<pre class="r"><code>county_data = county_data %&gt;% 
+  rename('Housing Price' = price,
+         'Income Per Capita' = Income_PerCapita,
+         'Crime Rate' = crime_rate_per_100000,
+         'Unemployment Rate' = pct_unemp,
+         'Num Of Colleges' = college_num,
+         'Num Of Public Schools' = public_school_count,
+         'Num Of Private Schools' = private_school_count,
+         'Hospital Rating' = hospital_rating,
+         'Num Of Shoppingmalls' = num_shoppingmall,
+         'Risk Level' = RiskLevel) %&gt;% 
+  left_join(.,recommendation_for_shiny, by=c(&quot;County&quot;,&quot;State&quot;)) 
+
+county_plot=county_data %&gt;% 
+    left_join(county_plot, by=c(&quot;State&quot;,&quot;County&quot;)) %&gt;% 
+    na.omit()
+    
+state_list = unique(county_data$State)
+
+variable_list = c(&quot;State&quot;,
+                  &quot;County&quot;,
+                  &quot;Population&quot;,
+                  &quot;Crime Rate&quot;,
+                  &quot;Risk Level&quot;,                  
+                  &quot;Housing Price&quot;,
+                  &quot;Hospital Rating&quot;,                  
+                  &quot;Num Of Colleges&quot;,
+                  &quot;Income PerCapita&quot;,  
+                  &quot;Unemployment Rate&quot;,                    
+                  &quot;Num Of Public Schools&quot;,
+                  &quot;Num Of Private Schools&quot;,
+                  &quot;Num Of Shoppingmalls&quot;)
+
+vars=c(&quot;Population&quot;,
+       &quot;Crime Rate&quot;,
+       &quot;Risk Level&quot;,                  
+       &quot;Housing Price&quot;,
+       &quot;Hospital Rating&quot;,                  
+       &quot;Num Of Colleges&quot;,
+       &quot;Income PerCapita&quot;,  
+       &quot;Unemployment Rate&quot;,                    
+       &quot;Num Of Public Schools&quot;,
+       &quot;Num Of Private Schools&quot;,
+       &quot;Num Of Shoppingmalls&quot;)</code></pre>
+<pre class="r"><code>shinyApp(
+  ui = tagList(
+    navbarPage(
+    theme = shinytheme(&quot;cosmo&quot;),      
+    &quot;U.S. County Housing Price&quot;,
+    tabPanel(&quot;County Outlook&quot;, 
+             sidebarPanel(
+               selectInput(&quot;state&quot;, 
+                           &quot;Select A State&quot;, 
+                           choices = state_list, 
+                           selected = 1),
+               checkboxGroupInput(&quot;variable&quot;,&quot;Select variables to view&quot;, variable_list),
+               actionButton(&quot;update&quot;, &quot;Update&quot;),
+               hr(),
+               h3(&quot;Variable Dictionary: &quot;),
+               helpText(&quot;- Crime Rate: number of crimes per 100,000&quot;),
+               helpText(&quot;- Risk Level: 9 - Highest; 0 - lowest&quot;),
+               helpText(&quot;- Housing Price: $1000/square-meters&quot;),
+               helpText(&quot;- Hospital Rating: 5 - highest; 0 - lowest&quot;),
+               helpText(&quot;- Unemployment Rate: in percentage&quot;)
+               ),
+             mainPanel(
+               DT::dataTableOutput(&quot;table1&quot;)
+               )),
+    
+    tabPanel(&quot;County Housing Price&quot;,
+             sidebarPanel(
+               selectInput(&quot;state_hist&quot;, 
+                           &quot;Select A State&quot;, 
+                           choices = state_list, 
+                           selected = 1),
+               sliderInput(&quot;slide&quot;, 
+                           label = &quot;Choose Your Price Range&quot;, 
+                           min = 0.406, max = 4, value = c(0.5, 0.6)),
+               actionButton(&quot;bargraph&quot;, &quot;Get Housing Price Distribution&quot;),
+               hr(),
+               h3(&quot;Variable Dictionary: &quot;),
+               helpText(&quot;- Housing Price: $1000/m^2&quot;)
+               ),
+             mainPanel(
+               plotOutput(&quot;distribution&quot;)
+             )),
+    
+    
+    ## create an interactive map
+    tabPanel(&quot;Interactive map&quot;, 
+             div(class=&quot;outer&quot;,
+
+      tags$head(
+        # Include our custom CSS
+        includeCSS(&quot;styles.css&quot;),
+        includeScript(&quot;gomap.js&quot;)
+      ),
+
+      leafletOutput(&quot;map&quot;, width=&quot;100%&quot;, height=&quot;100%&quot;),
+      absolutePanel(id = &quot;controls&quot;, class = &quot;panel panel-default&quot;, fixed = TRUE,
+        draggable = TRUE, top = 60, left = &quot;auto&quot;, right = 20, bottom = &quot;auto&quot;,
+        width = 330, height = &quot;auto&quot;,
+
+        h2(&quot;Variables explorer&quot;),
+
+        selectInput(&quot;color&quot;, &quot;Color&quot;, vars),
+        selectInput(&quot;size&quot;, &quot;Size&quot;, vars, selected = &quot;Housing Price&quot;)
+        
+        ),
+
+      tags$div(id=&quot;cite&quot;,
+        'Data compiled for ', tags$em('Coming Apart: The State of White America, 1960–2010'), ' by Charles Murray (Crown Forum, 2012).',&quot;code from https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example&quot;
+      )
+      )
+      ),
+    
+    
+    ## recommendation system
+    tabPanel(&quot;Recommendation Level -- From Modeling&quot;, 
+             sidebarPanel(
+               selectInput(&quot;state_rd&quot;, &quot;Select A State&quot;, choices = state_list, selected = 1),
+               actionButton(&quot;recommend&quot;, &quot;Get Recommendation&quot;),
+               hr(),
+               h4(&quot;Recommendation Level Instruction: &quot;),
+               helpText(&quot;The larger the level, the more highly the county is recommended.&quot;),
+               helpText(&quot;- 1: Extremely Not Recommended.&quot;),
+               helpText(&quot;- 2: Highly Not Recommended.&quot;),
+               helpText(&quot;- 3: Not Recommended.&quot;),
+               helpText(&quot;- 4: Fair Offer.&quot;),
+               helpText(&quot;- 5: Recommened.&quot;),
+               helpText(&quot;- 6: Highly Recommended.&quot;),
+               helpText(&quot;- 7: Extremely Recommended.&quot;)           
+               
+               ),
+             mainPanel(
+               plotOutput(&quot;recommendation_level&quot;, height = &quot;600px&quot;),
+               htmlOutput((&quot;Instruction&quot;))
+               )),
+    
+    
+    tabPanel(&quot;Recommendation Score -- From Dataset&quot;, 
+             sidebarPanel(
+               selectInput(&quot;rank_state&quot;, 
+                           &quot;Select A State&quot;, 
+                           choices = state_list,
+                           selected = 1),
+               
+               checkboxGroupInput(&quot;variable_rd&quot;,
+                                  &quot;Select variables to rank&quot;,
+                  c(&quot;Cheap&quot;,&quot;safety&quot;,&quot;income&quot;,&quot;transportation&quot;,&quot;cpi&quot;,&quot;economic&quot;,&quot;tax&quot;,&quot;school&quot;,&quot;shopping&quot;)),
+               actionButton(&quot;rank&quot;, &quot;Get Recommendation Score&quot;),
+               hr(),
+               h3(&quot;Variable Dictionary: &quot;),
+               helpText(&quot;- Cheap: the cheaper the housing price, the higher the score&quot;),
+               helpText(&quot;- Safety: the safer the county area is, the higher the score&quot;),
+               helpText(&quot;- Income: the higher the income level in the county, the higher the score&quot;),
+               helpText(&quot;- Transportation: the more convenient the transportation is, the higher the score&quot;),
+               helpText(&quot;- CPI: the higher the CPI is, the higher the score&quot;),
+               helpText(&quot;- Economic: the more developed the county is, the higher the score&quot;),
+               helpText(&quot;- Tax: the lower the tax rate is, the higher the score&quot;),
+               helpText(&quot;- School: the larger number of schools in the county, the higher the score&quot;),
+               helpText(&quot;- Shopping: the larger number of shopping malls in the county, the higher the score&quot;)
+               ),
+             mainPanel(
+               htmlOutput(&quot;rank_level_instruction&quot;),
+               plotOutput(&quot;rank_plot&quot;, height = &quot;500px&quot;)
+               ))
+))
+,
+  
+  server = function(input, output, session){
+    
+    ## panel1 
+    tabledata = eventReactive(
+      input$update,{
+      county_data %&gt;% filter(State == input$state) %&gt;% select(input$variable)
+    })
+    
+    output$table1 = DT::renderDataTable(DT::datatable({
+      tabledata()
+      }))
+    
+    
+    ## panel 2
+    observeEvent(
+      input$state_hist, {
+        histdata = county_data %&gt;% filter(State == input$state_hist)
+        updateSliderInput(session, &quot;slide&quot;,
+                          min = min(histdata$`Housing Price`),
+                          max = max(histdata$`Housing Price`))
+      })
+    
+    histdata = eventReactive(
+      input$bargraph, {
+        county_data %&gt;% filter(State == input$state_hist,
+                               `Housing Price`&lt;= input$slide[2],
+                               `Housing Price` &gt;= input$slide[1])
+      }
+    )
+    
+    output$distribution = renderPlot({
+      plot = histdata()
+      
+      ggplot(data = plot, 
+             aes(x = reorder(County, -`Housing Price`), 
+                 y = `Housing Price`,
+                 fill = `Housing Price`)) +
+        geom_bar(stat = &quot;identity&quot;,
+                 color = &quot;black&quot;,
+                 position = position_dodge()) +
+        geom_text(aes(label = `Housing Price`),
+                  position = position_dodge(0.9),
+                  vjust = 1.6,
+                  size = 3.5,
+                  color = &quot;black&quot;) +
+        xlab(&quot;County&quot;) +
+        ylab(&quot;Housing Price ($1000/m^2)&quot;) +
+        theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1)) +
+        scale_fill_gradient(low=&quot;lightblue&quot;, high=&quot;pink&quot;)
+      })
+    
+    
+    ## panel 3
+    # Create the map
+    output$map &lt;- renderLeaflet({
+      leaflet() %&gt;%
+        addTiles(
+          #urlTemplate = &quot;//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png&quot;,
+          attribution = 'Maps by &lt;a href=&quot;http://www.mapbox.com/&quot;&gt;Mapbox&lt;/a&gt;'
+          ) %&gt;%
+        setView(lng = -93.85, lat = 37.45, zoom = 4)
+      })
+    
+    observe({
+    colorBy &lt;- input$color
+    sizeBy &lt;- input$size
+
+    colorData &lt;- county_plot[[colorBy]]
+    pal &lt;- colorBin(&quot;viridis&quot;, colorData, 7, pretty = FALSE)
+    radius &lt;- county_plot[[sizeBy]] / max(county_plot[[sizeBy]]) * 30000
+    
+
+    leafletProxy(&quot;map&quot;, data = county_plot) %&gt;%
+      clearShapes() %&gt;%
+      addCircles(~Long, ~Lat, radius=radius, layerId=~Zipcode,
+        stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %&gt;%
+      addLegend(&quot;bottomleft&quot;, pal=pal, values=colorData, title=colorBy,
+        layerId=&quot;colorLegend&quot;)
+    })
+    
+    # Show a popup at the given location
+    showZipcodePopup &lt;- function(zipcode, lat, lng) {
+    selectedZip &lt;- county_plot[county_plot$Zipcode == zipcode,]
+    content &lt;- as.character(tagList(
+      tags$h4(selectedZip$recommend),
+      tags$strong(HTML(sprintf(&quot;%s, %s %s&quot;,
+        selectedZip$City, selectedZip$County, selectedZip$State)))
+    ))
+    leafletProxy(&quot;map&quot;) %&gt;% addPopups(lng, lat, content, layerId = zipcode)
+    }
+
+    # When map is clicked, show a popup with city info
+    observe({
+      leafletProxy(&quot;map&quot;) %&gt;% clearPopups()
+      event &lt;- input$map_shape_click
+      if (is.null(event))
+        return()
+      
+      isolate({
+        showZipcodePopup(event$id, event$lat, event$lng)
+      })
+    })
+  
+    ### panel 4
+    barplotdata = eventReactive(
+      input$recommend,{
+        county_data %&gt;% 
+          filter(State==input$state_rd) %&gt;% 
+          select(County,recommend) %&gt;% 
+          arrange(recommend)
+        
+    })
+    
+    output$Instruction = renderUI({
+      
+      str1 = &quot;The recommendation level is based on the test result from the predicting model underneath the App. The smaller difference between the real price and the predicted price, the more highly the county is recommended.&quot;
+      str2 = &quot;Choose a state you want to look at and check the recommendation levels for all the counties within that state.&quot;
+      
+      HTML(paste(str1, str2, sep = '&lt;br/&gt;&lt;br/&gt;'))
+    })
+    
+    
+    output$recommendation_level = renderPlot({
+      barplot=barplotdata()
+      
+      ggplot(data = barplot, 
+             aes(x = reorder(County, -recommend), 
+                 y = recommend,
+                 fill = recommend)) + 
+        geom_bar(stat=&quot;identity&quot;,
+                 width = 1) + 
+        xlab(&quot;County&quot;) + 
+        ylab(&quot;recommendation level&quot;) +
+        coord_flip() +
+        theme(axis.text.y = element_text(size = 8))
+      })
+    
+    
+    
+    ### panel5 
+    tabledata2 = eventReactive(
+      input$rank,{
+        
+        state_county = county_data_recommend_for_shiny %&gt;% 
+          filter(State == input$rank_state) %&gt;% 
+          select(County, State)
+        
+        county_data_recommend_for_shiny %&gt;% 
+          filter(State == input$rank_state) %&gt;% 
+          select(input$variable_rd) %&gt;% 
+          mutate(average = round(rowSums(.)/ncol(.), 2),
+                 location = paste(state_county$County,
+                                  &quot;,&quot;,
+                                  state_county$State)) %&gt;% 
+          arrange(desc(average)) %&gt;% 
+          .[1:20, ]
+        })
+    
+    output$rank_level_instruction = renderUI({
+      
+      str1 = &quot;Based on the values of each variable, we assigned a generalized score for each variable in each county. The higher the score is, the better the indicator is. The overall recommendation score is the average score of all the variables you choose.&quot;
+      str2 = &quot;Choose a state or multiple states you want to look at and select the features that are more important to you. Then check which county is the best for you!&quot;
+      
+      HTML(paste(str1, str2, sep = '&lt;br/&gt;&lt;br/&gt;'))
+    })
+        
+        
+    output$rank_plot = renderPlot({
+      plot = tabledata2()
+      
+      ggplot(data = plot, 
+             aes(x = reorder(location, -average), 
+                 y = average,
+                 fill = average)) +
+        geom_bar(stat = &quot;identity&quot;,
+                 color = &quot;black&quot;,
+                 position = position_dodge()) +
+        geom_text(aes(label = average),
+                  position = position_dodge(0.9),
+                  vjust = 1.6,
+                  size = 3.5,
+                  color = &quot;black&quot;) +
+        xlab(&quot;State &amp; County&quot;) +
+        ylab(&quot;Overall Recommendation Score&quot;) +
+        theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1)) +
+        scale_fill_gradient(low=&quot;lightblue&quot;, high=&quot;pink&quot;)
+      })
+    
+    }
+)</code></pre>
+<p>Citation: 1. <a href="https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix" class="uri">https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix</a> 2. <a href="https://stackoverflow.com/questions/17838709/scale-and-size-of-plot-in-rstudio-shiny" class="uri">https://stackoverflow.com/questions/17838709/scale-and-size-of-plot-in-rstudio-shiny</a> 3. <a href="https://stackoverflow.com/questions/23233497/outputting-multiple-lines-of-text-with-rendertext-in-r-shiny" class="uri">https://stackoverflow.com/questions/23233497/outputting-multiple-lines-of-text-with-rendertext-in-r-shiny</a></p>
+</div>
+<div id="instruction" class="section level2">
+<h2>Instruction</h2>
+<p>Since the shiny app cannot be knitted in the project.rmd file due to directory changes, we separate an “app.R” file to show the shiny app we made. To use the shiny app, simply run the R file and the application will automatically show up.</p>
+</div>
+<div id="shiny-app-details" class="section level2">
+<h2>Shiny App Details</h2>
+<p>There are five different panels in our shiy app, with each one containing different information and serving different functions. The steps to build these panals and the functionalities of them will be articulated in details:</p>
+<p>The overall set up of the shiny app is a <code>navbarPage</code> under the <code>tagList</code>. We created five <code>tabPanel</code> with the page and applied the theme “cosmo”.</p>
+<div id="county-outlook" class="section level3">
+<h3>1. County Outlook:</h3>
+<ul>
+<li><p>Construction: the first panel is called “County Outlook”, which contains a table with general information of each county, such as GDP, population, unemployment rate etc. In the <code>sidebarPanel</code>, users can select whichever state they want to look at and choose the variables they are interested in. We also added some <code>helpText</code> to explain each variable to help users understand. The <code>mainPanel</code> displays a table.</p></li>
+<li><p>Functionality: This panel gives users an overall idea of what each county looks like. Instead of just showing the average housing price for each county, they can capture more useful information. Additionally, users can sort any column and search any key word on the table.</p></li>
+<li><p>Usage: Users choose a state and specify the variables they are interested from the provided list. By clicking the “update” button, the table will show up.</p></li>
+</ul>
+</div>
+<div id="county-housing-price" class="section level3">
+<h3>2. County Housing Price:</h3>
+<ul>
+<li><p>Construction: similarly, we added a <code>selectInput</code>, allowing users to select a state they want to look at. Then we incorporated a<code>sliderInput</code> for users to specify the housing price range. Since the range for each state is different, we used an <code>obserEvent</code> function to update the max and min value of sliderInput once there is anything changed in “state_list”. Once the “histogram” button is triggered, the <code>mainPanel</code> will generate a barplot, with <code>County</code> on the horizontal axis and <code>Housing Price</code> on the vertical axis.</p></li>
+<li><p>Funcationality: considering that some users are interested in the distribution of housing prices in different counties in a state, we created this panel. It can help users narrow the search scope of different locations.</p></li>
+<li><p>Usage: Choose a state and the slider range will automatically update. Then move the slider and specify the range you want to look at. Then click “Get Housing Price Distribution” button.</p></li>
+</ul>
+</div>
+<div id="interactive-map" class="section level3">
+<h3>3. Interactive Map</h3>
+<ul>
+<li><p>Another designed function of our shiny App is the interactive map. In this tabpanel users can select two interested variables from the previous dataset we obtained and they will be plotted on the US map. After looking at an excellent example called “SuperZip” from shiny gallery, we used leaflet package to draw this elegant map but to find the location of each county we need to use its coordinates. To solve this task we used the longitude, latitude and Zipcode of some cities in one county and cities in one county will have identical values such as housing price,income per capita.</p></li>
+<li><p>In the server function we created a map first and then drew tiny circles representing cities on the top of previous map layer. The radius and the color of each circle is controlled by input variables so that our users can compare the values by the circle size and color. The reason why we decided to change the color and size at the same time is to explore the interactions between the selected two variables. In addition we added our recommendation results to a popup window.</p></li>
+</ul>
+</div>
+<div id="recommendation-level-from-modeling" class="section level3">
+<h3>4. Recommendation Level – From Modeling</h3>
+<ul>
+<li><p>Construction: similar as before, we added a <code>selectInput</code> for users to choose a state. We alsp provided the explanations of different recommendation levels using <code>helpText</code>. The <code>mainPanel</code> contains a <code>plotOutput</code> and a <code>htmlOutput</code>. We used a <code>eventReactive</code> function to create a new dataframe only containing the observations of the state users specify. Afterthen, when the “recommend” button is clicked, a barplot will be generated, with different recommendation level grouped together.</p></li>
+<li><p>Funcationality: this panel is used to show what is the recommended county from the modeling step. If the real price and predictive price are very close for a county, then we say the county is recommended (based on the magnitude of the difference, we classify the level of recommendation). This will give users some idea of whether a county is worth an investment or not in general.</p></li>
+<li><p>Usage: Choose a state and click “Get Recommendation”. Then a bar plot will show up.</p></li>
+</ul>
+</div>
+<div id="recommendation-score-from-dataset" class="section level3">
+<h3>5. Recommendation Score – From Dataset</h3>
+<ul>
+<li><p>Construction: In the last panel, we used a <code>selectInput</code> for state choice and used <code>checkboxGroupInput</code> for users to choose different variables. Same as the 4th panel, we added some <code>helpText</code> to help readers understand what are those variables. The <code>mainPanel</code> contains a <code>htmlOutput</code> and a <code>plotOutput</code>. In the mainPanel, we used an <code>evenReactive</code> function. Whenever the input state changes, a dataframe will be generated correspondingly, with the overall recommendation score as a variable. Then a bar plot will be created, with County&amp;State on the horizontal axis and recommendation score on the vertical axis.</p></li>
+<li><p>Functionality: we used a different datafram for this panel. Based on the values of each variable in the original dataset, we assigned a generalized score for each value of that variable from 0 - 100. And then we average the generalized scores of the variables that users choose to calculate the overall score. The recommendation from 4th panel is based on the modeling result, showing how close the predicted value is to the real value. However, in this panel, users can specify the variables to be used in the recommendation system and we calculate the score in the backstage. The higher the score, the more recommended the county is.</p></li>
+<li><p>Usage: select one or more states and click “Get Recommendation Score”.</p></li>
+</ul>
+</div>
 </div>
 
 
