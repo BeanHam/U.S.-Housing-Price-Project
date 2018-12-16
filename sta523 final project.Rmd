@@ -1,3 +1,8 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
 ·---
 title: "sta523 final project"
 output: html_document
@@ -1207,8 +1212,7 @@ shinyApp(
                selectInput("rank_state", 
                            "Select A State", 
                            choices = state_list,
-                           selected = 1,
-                           multiple = TRUE),
+                           selected = 1),
                
                checkboxGroupInput("variable_rd",
                                   "Select variables to rank",
