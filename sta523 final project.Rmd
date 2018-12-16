@@ -618,7 +618,7 @@ county_data = county_data %>%
 ```
 
 
-Model EDA
+## Model EDA
 
 Before we start to build the models, we want to do the final round to check the dataset to make sure:
 
@@ -699,7 +699,7 @@ county_data = county_data %>%
 
 
 
-Modelling
+## Modelling
 
 This section we try to build the models for our data. Our models have two ultimate goals:
 
@@ -1036,7 +1036,7 @@ load("county_plot.Rdata")
 ```
 
 
-Shiny
+## Shiny
 
 Citation: https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
 
