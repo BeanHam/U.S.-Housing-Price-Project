@@ -334,8 +334,8 @@ price_2017 = data.frame(State = get_gasoline(1), Regular = get_gasoline(2),
          MidGrade = as.numeric(as.character(MidGrade)),
          Premium = as.numeric(as.character(Premium)),
          Diesel = as.numeric(as.character(Diesel))) %>%
-  mutate(State = state.abb[match(State,state.name)]) %>%
-  left_join(price_2017, ., by='State')
+  mutate(State = state.abb[match(State, state.name)]) %>%
+  left_join(price_2017, ., by = 'State')
 ```
 
 ## 8. number of colleges
@@ -646,8 +646,6 @@ At last, we use a walk to show all the box plots/scatter plots for our analysis.
 
 
 ```{r}
-which(is.na(county_data))
-
 create_plot = function(input, name){
   if(is.factor(input)){
     p = data_frame(
@@ -675,8 +673,8 @@ subplots = function(df, cols){
 }
 
 
-walk(1:(ncol(county_data %>% select(- County, - State, - price) ) %/% 9 + 1), function(group_num){
-  col_index = (group_num * 9  - 8):min(group_num * 9, ncol(df))
+walk(1:((ncol(county_data) - 3) %/% 9 + 1), function(group_num){
+  col_index = (group_num * 9  - 8):min(group_num * 9, ncol(county_data) - 3)
   subplots(county_data %>% select(- County, - State, - price), col_index)
 })
 ```
