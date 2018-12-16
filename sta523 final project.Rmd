@@ -3,7 +3,7 @@ title: "sta523 final project"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -141,8 +141,8 @@ suppressMessages(library(shiny))
 suppressMessages(library(shinythemes))
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyverse))
-'%ni%' <- Negate('%in%')
 suppressMessages(library(fmsb))
+'%ni%' <- Negate('%in%')
 ```
 
 ## 1. base data
@@ -153,10 +153,10 @@ This dataset contains the time series data about the housing price starting from
 
 Because of that, the variables we scrape later also are data presented in 2017.
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 price_2017 = read_csv("pricepersqft.csv") %>%
-  select(County,State, `17-Jan`) %>%
-  group_by(County,State) %>%
+  select(County, State, `17-Jan`) %>%
+  group_by(County, State) %>%
   summarize(price = median(`17-Jan`))
 ```
 
@@ -169,7 +169,7 @@ So we use the method we have learned from the class and the previous homework (r
 
 At last we clean the data by filtering all empty values and replace all . with "". We cleaned the variable names and the variable classes and finally bind that tidy population dataset with our previous base dataset.
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 price_2017 = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_per_capita_income" %>%
   read_html() %>%
   html_nodes("table.wikitable.sortable") %>%
@@ -184,7 +184,7 @@ price_2017 = "https://en.wikipedia.org/wiki/List_of_United_States_counties_by_pe
             Median_Family_Income = as.numeric(Medianfamilyincome),
             Population = as.numeric(Population),
             Num_Household = as.numeric(`Number ofhouseholds`)) %>%
-    merge(price_2017,.,by = c('County','State'))
+  merge(price_2017, ., by = c('County', 'State'))
 ```
 
 
@@ -204,46 +204,46 @@ So after we match the zipcodes with the corrsponding counties, there may be some
 
 The final hilton data we merge into the base dataset is the number of hiltons within each counties. And we replace all NA with 0s. 
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 zip_county_lookup = read_csv("ZIP-COUNTY-FIPS_2018-03.csv") %>%
-    mutate(County = COUNTYNAME)
+  mutate(County = COUNTYNAME)
 
 urls = read_html("https://www3.hilton.com/en/hotel-locations/us/index.html") %>%
-    html_nodes(.,'ul.directory_locations_list li a') %>% 
-    html_attr(., "href") %>% paste0("https://www3.hilton.com", .)
+  html_nodes(., 'ul.directory_locations_list li a') %>% 
+  html_attr(., "href") %>% paste0("https://www3.hilton.com", .)
 
 price_2017 = sapply(urls, function(url){
-     url %>%
-         read_html() %>%
-         html_nodes('ul.directory_locations_list li a') %>%
-         {paste0("https://www3.hilton.com", html_attr(., "href"))} %>%
-         sapply(function(locationURL){
-             locationURL %>%
-                 read_html() %>%
-                 html_nodes('ul.directory_hotels_list li') %>%
-                 html_text() %>%
-                 str_replace("\t", "") %>%
-                 str_replace("\r\n", "") %>%
-                 {strsplit(., " ")[[1]]} %>%
-                 {.[length(.)]} %>%
-                 {strsplit(., "USA")[[1]][1]} %>%
-                 substr(1, 5)
-             })
- }) %>%
-     unlist() %>%
-     unname() %>%
-    as.data.frame() %>%
-    {colnames(.)[1] = "zips"; .} %>%
-    merge(.,zip_county_lookup,by.x ='zips',by.y = 'ZIP') %>%
-     mutate(COUNTYNAME = COUNTYNAME %>%
-                str_locate_all(" ") %>%
-                sapply(function(mat){mat[min(dim(mat), 2), 1] - 1}) %>%
-                {str_sub(COUNTYNAME, 1, .)}) %>%
+  url %>%
+    read_html() %>%
+    html_nodes('ul.directory_locations_list li a') %>%
+    {paste0("https://www3.hilton.com", html_attr(., "href"))} %>%
+    sapply(function(locationURL){
+      locationURL %>%
+        read_html() %>%
+        html_nodes('ul.directory_hotels_list li') %>%
+        html_text() %>%
+        str_replace("\t", "") %>%
+        str_replace("\r\n", "") %>%
+        {strsplit(., " ")[[1]]} %>%
+        {.[length(.)]} %>%
+        {strsplit(., "USA")[[1]][1]} %>%
+        substr(1, 5)
+      })
+}) %>%
+  unlist() %>%
+  unname() %>%
+  as.data.frame() %>%
+  {colnames(.)[1] = "zips"; .} %>%
+  merge(., zip_county_lookup, by.x ='zips', by.y = 'ZIP') %>%
+  mutate(COUNTYNAME = COUNTYNAME %>%
+           str_locate_all(" ") %>%
+           sapply(function(mat){mat[min(dim(mat), 2), 1] - 1}) %>%
+           {str_sub(COUNTYNAME, 1, .)}) %>%
   group_by(COUNTYNAME,STATE) %>%
   summarize(count = length(COUNTYNAME)) %>%
-    mutate(hilton_count = count) %>% 
-    dplyr::select(COUNTYNAME,STATE,hilton_count) %>%
-    left_join(price_2017, ., by = c("County"="COUNTYNAME","State" = "STATE")) %>%
+  mutate(hilton_count = count) %>% 
+  dplyr::select(COUNTYNAME, STATE, hilton_count) %>%
+  left_join(price_2017, ., by = c("County"="COUNTYNAME", "State" = "STATE")) %>%
   mutate_all(funs(replace(., is.na(.), 0)))
 ```
 
@@ -254,7 +254,7 @@ In order to merge more easily and efficiently for the later chuncks, we want to 
 
 For both datasets, we remove County, Borough, Parish, Munipality, Municipio, Island and We replace all "city" by "City". Now the two datasets' County column are identical and easy to merge in the later tasks. 
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 clean_county = function(df){
   df %>%
     mutate(County = str_replace(County, " County,*$| Borough,*$| Parish,*$| Municipality,*$| Municipio,*$| Island,*$", "") %>%
@@ -263,7 +263,7 @@ clean_county = function(df){
 
 price_2017 = clean_county(price_2017) 
 zip_county_lookup = clean_county(zip_county_lookup) %>%
-  select(ZIP,STATE,County,CITY)
+  select(ZIP, STATE, County, CITY)
 ```
 
 ## 5. crime rate data
@@ -276,7 +276,7 @@ We clean the crime dataframe and merge it into the base dataset. Since in the cr
 
 However, one observation missing after the merging and after checking for that variables we discover that in crime dataset that obversvation names "Larue" but it should named "LaRue" in our base dataset. So we modified that observation and merge agian. 
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 price_2017 = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
   select(county_name, crime_rate_per_100000, IDNO, CPOPCRIM, CPOPARST, COVIND,
          MURDER, RAPE, ROBBERY, AGASSLT, BURGLRY, LARCENY, MVTHEFT, ARSON) %>%
@@ -286,7 +286,7 @@ price_2017 = read_csv("crime_data_w_population_and_crime_rate.csv") %>%
          County = County %>% sapply(head, -1) %>% 
            sapply(function(v) {do.call(paste, as.list(v))})) %>%
   clean_county() %>%
-    left_join(price_2017,.,by=c('County','State'))
+    left_join(price_2017, ., by=c('County','State'))
 ```
 
 ## 6. tax rate data
@@ -297,17 +297,17 @@ However, that data is a zipfile and after unzip it, it becomes a folder. So we f
 
 Finally, we merge that tax rate dataset with our base dataset. 
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 setwd("TAXRATES_ZIP5")
 
 price_2017 = list.files(pattern = "*.csv") %>%
   map(read.csv) %>%
   {do.call(bind_rows, .)} %>%
-  left_join(zip_county_lookup,by=c("ZipCode"="ZIP")) %>%
+  left_join(zip_county_lookup,by = c("ZipCode"="ZIP")) %>%
   select(County, State, StateRate, EstimatedCombinedRate, EstimatedCountyRate,
          EstimatedCityRate, EstimatedSpecialRate, RiskLevel) %>%
   {.[!duplicated(.[,1:2]), ]} %>%
-    left_join(price_2017,.,by=c('County','State')) 
+  left_join(price_2017, ., by = c('County','State')) 
 ```
 
 ## 7. gasoline price data
@@ -320,20 +320,23 @@ However, in the website the price is stored as for example: $3.566. This is a fa
 
 Finally, we merge the gasoline dataset with our base dataset. 
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 get_gasoline = function(k){
     web = read_html("https://gasprices.aaa.com/state-gas-price-averages/")
-    dat = trimws(html_text(html_nodes(web, paste0("td:nth-child(",k,")"))))
-    }
+    dat = trimws(html_text(html_nodes(web, paste0("td:nth-child(", k, ")"))))
+}
 
-price_2017 = data.frame(State=get_gasoline(1), Regular=get_gasoline(2), MidGrade=get_gasoline(3), Premium=get_gasoline(4), Diesel=get_gasoline(5)) %>% lapply(., gsub, pattern="\\$", replacement="") %>% 
-    as.data.frame() %>% 
-    mutate(Regular = as.numeric(as.character(Regular)),
-           MidGrade = as.numeric(as.character(MidGrade)),
-           Premium = as.numeric(as.character(Premium)),
-           Diesel = as.numeric(as.character(Diesel))) %>%
-    mutate(State = state.abb[match(State,state.name)]) %>%
-    left_join(price_2017,.,by='State')
+price_2017 = data.frame(State = get_gasoline(1), Regular = get_gasoline(2), 
+                        MidGrade = get_gasoline(3), Premium = get_gasoline(4), 
+                        Diesel = get_gasoline(5)) %>% 
+  lapply(., gsub, pattern = "\\$", replacement = "") %>% 
+  as.data.frame() %>% 
+  mutate(Regular = as.numeric(as.character(Regular)),
+         MidGrade = as.numeric(as.character(MidGrade)),
+         Premium = as.numeric(as.character(Premium)),
+         Diesel = as.numeric(as.character(Diesel))) %>%
+  mutate(State = state.abb[match(State,state.name)]) %>%
+  left_join(price_2017, ., by='State')
 ```
 
 ## 8. number of colleges
@@ -344,22 +347,22 @@ So we scrape the data from the IPEDS Data Center to get all universities/college
 
 After matching these schools with their corresponding counties we summarize the number of colleges in each counties and finally we merge that college dataset to our base dataset. We replace NA with 0s. 
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
 
 cities = zip_county_lookup %>% select(CITY, County, STATE) %>% unique() %>%
-    rename(State = STATE, City = CITY)
+  rename(State = STATE, City = CITY)
 
 price_2017 = read_html("IPEDS Data Center.html") %>%
-    html_node("table.idc_gridview") %>%
-    html_table() %>%
-    select(-X1) %>% .[-1,] %>%
-    rename(school = X2, City = X3, State = X4) %>%
-    left_join(.,cities, by=c('City','State'))%>% 
-    group_by(County, State) %>%
-    summarise(college_num = n()) %>%
-    left_join(price_2017, ., by=c('County','State')) %>%
-    mutate(college_num = ifelse(is.na(college_num), 0, college_num))
+  html_node("table.idc_gridview") %>%
+  html_table() %>%
+  select(- X1) %>% .[-1, ] %>%
+  rename(school = X2, City = X3, State = X4) %>%
+  left_join(., cities, by = c('City', 'State'))%>% 
+  group_by(County, State) %>%
+  summarise(college_num = n()) %>%
+  left_join(price_2017, ., by = c('County','State')) %>%
+  mutate(college_num = ifelse(is.na(college_num), 0, college_num))
 ```
 
 
@@ -368,15 +371,15 @@ price_2017 = read_html("IPEDS Data Center.html") %>%
 Both the paper and the research group shows that the Traffic situation really affect the housing prices. No ones want to live in a place where they have to spent hours trafficing on the road. So we find a traffic dataset from the online sorces and after some manipulations on the dataset, we merge this data to our base dataset(dont talk too much here because it's very similar to what we did above).
 
 
-```{r message=FALSE, warning=FALSE}
+```{r message = FALSE, warning = FALSE}
 price_2017 = read_csv("EQIDATA_ALL_DOMAINS_2014MARCH11.CSV") %>% 
-  select(county_name,state,hwyprop,ryprop,
-         pct_pub_transport_log,fatal_rate_log,
-         pct_pers_lt_pov,pct_unemp) %>% 
-  rename(County=county_name,State=state)%>% 
-  mutate(County=str_replace_all(County,"County","") %>% 
+  select(county_name, state, hwyprop, ryprop,
+         pct_pub_transport_log, fatal_rate_log,
+         pct_pers_lt_pov, pct_unemp) %>% 
+  rename(County = county_name, State = state)%>% 
+  mutate(County = str_replace_all(County, "County", "") %>% 
            str_trim(side = "both")) %>%
-    left_join(price_2017, .,by=c('County','State'))%>%
+  left_join(price_2017, ., by = c('County','State'))%>%
   mutate_all(funs(replace(., is.na(.), 0)))
 ```
 
@@ -411,7 +414,7 @@ That's much easier. we simply read that wikitable and the whole list did not con
 
 For the lists:
 
-We use "html_nodes(page,"li") %>% html_text()" to scrape the corresponding data we needed from the list in wikipedia. 
+We use "html_nodes(page, "li") %>% html_text()" to scrape the corresponding data we needed from the list in wikipedia. 
 
 We also need an input n because in the lists, after the shopping mall name and location, there are also other information stored in that list that we dont want. Therefore, because we already know the number of shopping mall within each state, we have to input that n (the number of shopping mall in that state = the number of useful rows in the list) so we are not getting any annoying data. 
 
@@ -433,44 +436,45 @@ So we did some data manipulations and merge it with the cities data we construct
 
 After matching to the counties, we summarize the number of shopping malls in each counties and merge it with the base dataset. Replacing NA with 0s. 
 
-```{r message=FALSE, warning=FALSE}
-read_wikitable_flat = function(state,n1,k,n4,n5,l4,l5){
-    l1 = n1+1
-    url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_",state)
-    dat = read_html(url) %>%
-  html_nodes("table.wikitable.sortable") %>%
-  html_table() %>% flatten()
-  data=data.frame(
-  name=c(dat[[1]] %>% as.character(.),dat[[n1]] %>% as.character(.),
-         dat[[n1+k]] %>% as.character(.),dat[[n1+2*k]] %>% as.character(.),
-         dat[[n4]] %>% as.character(.),dat[[n5]] %>% as.character(.)
-  ),
-  location=c(dat[[2]] %>% as.character(.),dat[[l1]] %>% as.character(.),
-             dat[[l1+k]] %>% as.character(.),dat[[l1+2*k]] %>% as.character(.),
-             dat[[l4]] %>% as.character(.),dat[[l5]] %>% as.character(.)
-  ))
+```{r message = FALSE, warning = FALSE}
+read_wikitable_flat = function(state, n1, k, n4, n5, l4, l5){
+  l1 = n1 + 1
+  url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_", state)
+  dat = read_html(url) %>%
+    html_nodes("table.wikitable.sortable") %>%
+    html_table() %>% flatten()
+  data = data.frame(
+    name=c(dat[[1]] %>% as.character(.), dat[[n1]] %>% as.character(.),
+           dat[[n1 + k]] %>% as.character(.), dat[[n1 + 2 * k]] %>% as.character(.),
+           dat[[n4]] %>% as.character(.), dat[[n5]] %>% as.character(.)
+           ),
+    location = c(dat[[2]] %>% as.character(.), dat[[l1]] %>% as.character(.),
+                 dat[[l1 + k]] %>% as.character(.), 
+                 dat[[l1 + 2 * k]] %>% as.character(.),
+                 dat[[l4]] %>% as.character(.), dat[[l5]] %>% as.character(.)
+                 )
+  )
   return(data)
 }
 
 read_wikitable_nonflat = function(state){
-  url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_",state)
+  url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_", state)
   dat = read_html(url) %>%
-  html_nodes("table.wikitable.sortable") %>%
-  html_table() 
+    html_nodes("table.wikitable.sortable") %>%
+    html_table() 
   data = data_frame(
-  name = dat[[1]][[1]] %>% as.character(.),
-  location=dat[[1]][[2]] %>% as.character(.)
-)
+    name = dat[[1]][[1]] %>% as.character(.),
+    location=dat[[1]][[2]] %>% as.character(.)
+  )
   return(data)
 }
 
-read_wikilist = function(state,n){
-url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_",state)
+read_wikilist = function(state, n){
+url = paste0("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_", state)
 page = read_html(url)
-dat = data_frame(
-  name=html_nodes(page,"li") %>% html_text() 
-) %>% .[1:n,] %>%
-  separate(name, c("name", "location"), "-",remove=TRUE)
+dat = data_frame(name = html_nodes(page, "li") %>% html_text()) %>%
+  .[1:n,] %>%
+  separate(name, c("name", "location"), "-", remove=TRUE)
 }
 
 read_texas = function(p){
@@ -478,60 +482,60 @@ read_texas = function(p){
  dat = read_html(url) %>%
   html_nodes("table.wikitable.sortable") %>%
   .[[p]] %>% 
-  html_table(fill=TRUE) 
-dat = dat[,1:2]
-colnames(dat)<-c("name","location")
-return(dat)
+  html_table(fill = TRUE) 
+ dat = dat[, 1:2]
+ colnames(dat)<-c("name", "location")
+ return(dat)
 }
 
-shooping_mall_num = read_xlsx("shooping_mall_num.xlsx",1)
-shopping = shooping_mall_num[rep(row.names(shooping_mall_num), shooping_mall_num$'Number of Malls'), 1] %>%
-  as.data.frame() %>% .[1:821,]
+shooping_mall_num = read_xlsx("shooping_mall_num.xlsx", 1)
+shopping = shooping_mall_num[rep(row.names(shooping_mall_num), 
+                                 shooping_mall_num$'Number of Malls'), 1] %>%
+  as.data.frame() %>% .[1:821, ]
 
 cities$City = tolower(cities$City)
 
 page = read_html("https://en.wikipedia.org/wiki/List_of_shopping_malls_in_the_United_States")
 
 price_2017 = bind_rows(
-    al_data = read_wikitable_nonflat("Alabama") %>% mutate('STATE' = 'AL'),
-    ca_data = read_wikilist("California",181) %>%
-  separate(location, c("location", "state"), ",",remove=TRUE, extra = "merge") %>% 
-  select(name, location) %>% 
-  mutate('STATE' = 'CA'),
-  md_data = read_wikilist("Maryland",34) %>% mutate('STATE' = 'MD'),
-  mi_data = read_wikitable_flat("Michigan",8,7,29,36,30,37) %>% 
-    separate(location, c("location", "latitude"), "4",remove=TRUE, extra = "merge") %>% select(name, location) %>% 
-  mutate('STATE' = 'MI'),
+  al_data = read_wikitable_nonflat("Alabama") %>% mutate('STATE' = 'AL'),
+  ca_data = read_wikilist("California", 181) %>%
+    separate(location, c("location", "state"), ",", remove = TRUE, extra = "merge") %>%
+    select(name, location) %>% 
+    mutate('STATE' = 'CA'),
+  md_data = read_wikilist("Maryland", 34) %>% mutate('STATE' = 'MD'),
+  mi_data = read_wikitable_flat("Michigan",8, 7, 29, 36, 30, 37) %>% 
+    separate(location, c("location", "latitude"), "4", remove = TRUE, extra = "merge") %>%
+    select(name, location) %>% 
+    mutate('STATE' = 'MI'),
   nj_data = read_wikitable_nonflat("New_Jersey") %>% mutate('STATE' = 'NJ'),
-  or_data = read_wikitable_flat("Oregon",7,5,NA,NA,NA,NA) %>% 
+  or_data = read_wikitable_flat("Oregon", 7, 5, NA, NA, NA, NA) %>% 
   mutate('STATE' = 'OR'),
   pa_data = read_wikitable_nonflat("Pennsylvania") %>% mutate('STATE' = 'PA'),
-  tx_data = rbind(read_texas(1),read_texas(2),read_texas(3),
-                texas = read_wikilist("Texas",50) %>% .[15:50,] %>% separate(location, c("location", "other"), "[(]",remove=TRUE, extra = "merge") %>% 
-  select(name, location)) %>% 
-  mutate('STATE' = 'TX'),
-  st_data = data_frame(
-  name=html_nodes(page,"li") %>% html_text() 
-) %>% .[59:879,] %>% 
-  separate(name, c("name", "location1"), " . ",remove=TRUE)%>%
-  separate(name, c("name", "location2"), "–",remove=TRUE, extra = "merge") %>% 
-  mutate(location = coalesce(location1,location2)) %>%
-  select(name, location) %>% mutate(STATE = shopping)) %>%
-  separate(name, c("name", "other"), "[(]",remove=TRUE) %>%
-  select(name, location, STATE)%>%
-  separate(location, c("location", "other"), "[(]",remove=TRUE) %>%
+  tx_data = rbind(read_texas(1), read_texas(2), read_texas(3),
+                  texas = read_wikilist("Texas", 50) %>% .[15:50, ] %>%
+                    separate(location, c("location", "other"), "[(]", 
+                             remove = TRUE, extra = "merge") %>% 
+                    select(name, location)) %>% 
+    mutate('STATE' = 'TX'),
+  st_data = data_frame(name = html_nodes(page, "li") %>% html_text() ) %>%
+    .[59:879, ] %>% 
+    separate(name, c("name", "location1"), " . ", remove = TRUE) %>%
+    separate(name, c("name", "location2"), "–", remove = TRUE, extra = "merge") %>% 
+    mutate(location = coalesce(location1, location2)) %>%
+    select(name, location) %>% mutate(STATE = shopping)) %>%
+  separate(name, c("name", "other"), "[(]", remove = TRUE) %>%
   select(name, location, STATE) %>%
-    rename(City = location, State = STATE) %>%
-    mutate(City = tolower(City) %>% str_trim(.,"left")) %>%
-  merge(.,cities,by=c("City","State")) %>%
-  select(name,City,State,County) %>% unique() %>%
-  group_by(County,State) %>%
+  separate(location, c("location", "other"), "[(]", remove = TRUE) %>%
+  select(name, location, STATE) %>%
+  rename(City = location, State = STATE) %>%
+  mutate(City = tolower(City) %>% str_trim(., "left")) %>%
+  merge(., cities, by = c("City", "State")) %>%
+  select(name, City, State, County) %>% unique() %>%
+  group_by(County, State) %>%
   summarise(num_shoppingmall = length(County)) %>%
-  left_join(price_2017,.,by=c("County","State")) %>%
+  left_join(price_2017, ., by = c("County", "State")) %>%
     mutate(num_shoppingmall = ifelse(is.na(num_shoppingmall), 0, num_shoppingmall))
-    
-    
-
 ```
 
 ## 11. Public high school data
@@ -540,18 +544,20 @@ As the same reason as the colleges, high school also attract people coming from 
 
 We dont want to illustrate too much here because basically we are using the very similar data cleaning as we are using above. 
 
-```{r message=FALSE, warning=FALSE}
-price_2017 = read.csv("Public_high_school.csv", stringsAsFactors=FALSE) %>% 
+```{r message = FALSE, warning = FALSE}
+price_2017 = read.csv("Public_high_school.csv", stringsAsFactors = FALSE) %>% 
     select(1, 2, 4) %>%
-    rename(State = County.Name, County = County.Name..Public.School..2015.16, public_school_num = Total.Number.of.Public.Schools..Public.School..2015.16) %>%
+    rename(State = County.Name, County = County.Name..Public.School..2015.16,
+           public_school_num = Total.Number.of.Public.Schools..Public.School..2015.16) %>%
     mutate(County = str_trim(str_replace(.$County, "County", "")),
            public_school_num = as.numeric(public_school_num),
            State = stri_sub(str_trim(State), -2, -1)) %>% 
     na.omit() %>%
     group_by(County, State) %>% 
     summarise(public_school_count = sum(public_school_num, na.rm = TRUE)) %>%
-    left_join(price_2017, ., by=c('County','State')) %>%
-    mutate(public_school_count = ifelse(is.na(public_school_count), 0, public_school_count))
+    left_join(price_2017, ., by = c('County','State')) %>%
+    mutate(public_school_count = ifelse(is.na(public_school_count), 0, 
+                                        public_school_count))
 ```
 
 ## 12. Private high school data
@@ -560,16 +566,18 @@ The same reason as in the part 11.
 
 For here we use state.abb[match(toTitleCase(tolower(State)),state.name)] to transform the state name in the abbreviations by using the function state.abb. toTitleCase is to only transform the first letter into capital so it can match to the state.name. 
 
-```{r message=FALSE, warning=FALSE}
-price_2017 = read.csv("Private_high_school.csv", stringsAsFactors=FALSE) %>% 
+```{r message = FALSE, warning = FALSE}
+price_2017 = read.csv("Private_high_school.csv", stringsAsFactors = FALSE) %>% 
     select(2, 5) %>% 
-    rename(State = State.Name..Private.School..Latest.available.year, County = County.Name..Private.School..2015.16) %>% 
-    mutate(State = state.abb[match(toTitleCase(tolower(State)),state.name)],
+    rename(State = State.Name..Private.School..Latest.available.year, 
+           County = County.Name..Private.School..2015.16) %>% 
+    mutate(State = state.abb[match(toTitleCase(tolower(State)), state.name)],
            County = toTitleCase(tolower(County))) %>%
     group_by(County, State) %>% 
     summarise(private_school_count = n()) %>%
-    left_join(price_2017, ., by=c('County','State')) %>%
-    mutate(private_school_count = ifelse(is.na(private_school_count), 0, private_school_count))
+    left_join(price_2017, ., by = c('County','State')) %>%
+    mutate(private_school_count = ifelse(is.na(private_school_count), 0, 
+                                         private_school_count))
 
 ```
 
@@ -583,20 +591,24 @@ Therefore, we find a dataset containing all hospitals in the country and also th
 We summarize number of hospitals, number of emergency hospitals and average hospital ratings for each country and merge them to the base dataset. Replacing NA with 0 and if a county doesnt have a hospital will replace 0 with its rating. 
 
 
-```{r message=FALSE, warning=FALSE}
-price_2017 = read.csv("HospInfo.csv", stringsAsFactors=FALSE) %>%
-    select(Hospital.Name, County.Name, State,Emergency.Services, Hospital.overall.rating ) %>% rename(Name = Hospital.Name, County = County.Name, Emergency= Emergency.Services, rating = Hospital.overall.rating) %>%
-    mutate(County = toTitleCase(tolower(County)),
-           Emergency = as.numeric(Emergency),
-           rating = as.numeric(rating)) %>%
-    group_by(County, State) %>%
-    summarise(num_hospitals = length(County),
-              num_emergency = sum(Emergency),
-              hospital_rating = mean(rating,na.rm = TRUE)) %>%
-    mutate(hospital_rating = ifelse(is.nan(hospital_rating), 0, hospital_rating)) %>% left_join(price_2017, ., by=c('County','State')) %>%
-    mutate(num_hospitals = ifelse(is.na(num_hospitals), 0, num_hospitals),
-           num_emergency = ifelse(is.na(num_emergency), 0, num_emergency),
-           hospital_rating = ifelse(is.na(hospital_rating), 0, hospital_rating))
+```{r message = FALSE, warning = FALSE}
+price_2017 = read.csv("HospInfo.csv", stringsAsFactors = FALSE) %>%
+  select(Hospital.Name, County.Name, State, 
+         Emergency.Services, Hospital.overall.rating ) %>% 
+  rename(Name = Hospital.Name, County = County.Name, 
+         Emergency= Emergency.Services, rating = Hospital.overall.rating) %>%
+  mutate(County = toTitleCase(tolower(County)),
+         Emergency = as.numeric(Emergency),
+         rating = as.numeric(rating)) %>%
+  group_by(County, State) %>%
+  summarise(num_hospitals = length(County),
+            num_emergency = sum(Emergency),
+            hospital_rating = mean(rating, na.rm = TRUE)) %>%
+  mutate(hospital_rating = ifelse(is.nan(hospital_rating), 0, hospital_rating)) %>% 
+  left_join(price_2017, ., by=c('County','State')) %>%
+  mutate(num_hospitals = ifelse(is.na(num_hospitals), 0, num_hospitals),
+         num_emergency = ifelse(is.na(num_emergency), 0, num_emergency),
+         hospital_rating = ifelse(is.na(hospital_rating), 0, hospital_rating))
 ```
 
 
@@ -648,35 +660,35 @@ At last, we use a walk to show all the box plots/scatter plots for our analysis.
 which(is.na(county_data))
 
 create_plot = function(input, name){
-    if(is.factor(input)){
-        p = data_frame(
-            price = county_data$price,
-            input = input
-        ) %>% 
-            ggplot(aes(x = input, y = price)) + 
-            geom_boxplot() + 
-            labs(x = name)
-    }else{
-        p = data_frame(
-            price = county_data$price,
-            input = input
-        ) %>% 
-            ggplot(aes(x = input, y = price)) + 
-            geom_point() + 
-            labs(x = name)
-    }
-    return(p)
+  if(is.factor(input)){
+    p = data_frame(
+      price = county_data$price,
+      input = input
+    ) %>% 
+      ggplot(aes(x = input, y = price)) + 
+      geom_boxplot() + 
+      labs(x = name)
+  }else{
+    p = data_frame(
+      price = county_data$price,
+      input = input
+    ) %>% 
+      ggplot(aes(x = input, y = price)) + 
+      geom_point() + 
+      labs(x = name)
+  }
+  return(p)
 }
 
 subplots = function(df, cols){
-    eda_plots = map(cols, function(i){create_plot(df[, i], names(df)[i])})
-    grid.arrange(grobs = eda_plots, nrow = 3, ncol = 3)
+  eda_plots = map(cols, function(i){create_plot(df[, i], names(df)[i])})
+  grid.arrange(grobs = eda_plots, nrow = 3, ncol = 3)
 }
 
 
 walk(1:(ncol(county_data %>% select(- County, - State, - price) ) %/% 9 + 1), function(group_num){
-    col_index = (group_num * 9  - 8):min(group_num * 9, ncol(df))
-    subplots(county_data %>% select(- County, - State, - price), col_index)
+  col_index = (group_num * 9  - 8):min(group_num * 9, ncol(df))
+  subplots(county_data %>% select(- County, - State, - price), col_index)
 })
 ```
 
@@ -689,13 +701,13 @@ After that, our final cleaning is done and we are ready to the final modellings.
 
 ```{r}
 county_data = county_data %>%
-    mutate(
-     Population = log(Population),
-     Num_Household = log(Num_Household),
-     hilton_count = as.numeric(as.character(hilton_count)),
-     num_shoppingmall = as.numeric(as.character(num_shoppingmall)),
-     num_hospitals = as.numeric(as.character(num_hospitals)),
-     num_emergency = as.numeric(as.character(num_emergency))
+  mutate(
+    Population = log(Population),
+    Num_Household = log(Num_Household),
+    hilton_count = as.numeric(as.character(hilton_count)),
+    num_shoppingmall = as.numeric(as.character(num_shoppingmall)),
+    num_hospitals = as.numeric(as.character(num_hospitals)),
+    num_emergency = as.numeric(as.character(num_emergency))
     )
 ```
 
@@ -716,31 +728,30 @@ And After that, we construct a new dataset county_data_modelling, which is our d
 
 ```{r}
 Rsq = function(y_pred, y){
-    1 - sum((y_pred - y) ^ 2) / sum((y - mean(y)) ^ 2)
+  1 - sum((y_pred - y) ^ 2) / sum((y - mean(y)) ^ 2)
 }
 
-rmse = function(y_pred, y) {
-  rmse = sqrt(mean((y_pred - y)^2))
-return(rmse)}
+rmse = function(y_pred, y){
+  sqrt(mean((y_pred - y) ^ 2))
+}
 
 ```
 
 ```{r}
 county_data_modelling = county_data %>% 
-    select(- County, - State)
+  select(- County, - State)
 # rescale mean 0 sd 1
 rescale_mean = apply(county_data_modelling, 2, mean)
 rescale_sd = apply(county_data_modelling, 2, sd)
 county_data_modelling = county_data_modelling %>%
-    sweep(2, rescale_mean, "-") %>%
-    sweep(2, rescale_sd, "/")
+  sweep(2, rescale_mean, "-") %>%
+  sweep(2, rescale_sd, "/")
 
 # train test split 3:1
 set.seed(0)
 train_index = sample(1:dim(county_data)[1], floor(dim(county_data)[1] * 0.75))
 train = county_data_modelling[train_index, ]
 test = county_data_modelling[- train_index, ]
-
 ```
 
 
@@ -768,49 +779,56 @@ n = dim(train)[1]
 #AIC:
 step(model1,scope=list(lower=model1,upper=lm1),direction="both",k=2)
 
-Aic_without_inter = lm(formula = price ~ Income_PerCapita + Regular + pct_pub_transport_log + 
-    EstimatedSpecialRate + BURGLRY + ROBBERY + LARCENY + Median_Family_Income + 
-    Premium + MidGrade + IDNO + pct_pers_lt_pov + pct_unemp + 
-    num_shoppingmall + college_num + MURDER + EstimatedCountyRate + 
-    Median_Household_Income + public_school_count + CPOPCRIM + 
-    ryprop + private_school_count, data = train)
+Aic_without_inter = lm(formula = price ~ Income_PerCapita + Regular + 
+                         pct_pub_transport_log + EstimatedSpecialRate + BURGLRY + 
+                         ROBBERY + LARCENY + Median_Family_Income + Premium + 
+                         MidGrade + IDNO + pct_pers_lt_pov + pct_unemp + 
+                         num_shoppingmall + college_num + MURDER + 
+                         EstimatedCountyRate + Median_Household_Income + 
+                         public_school_count + CPOPCRIM + ryprop + 
+                         private_school_count, 
+                       data = train)
 
 print(Rsq(predict(Aic_without_inter, train, type = "response"), train$price))
 print(Rsq(predict(Aic_without_inter, test, type = "response"), test$price))
-rmse(predict(Aic_without_inter, train, type = "response"), train$price)
-rmse(predict(Aic_without_inter, test, type = "response"), test$price)
+print(rmse(predict(Aic_without_inter, train, type = "response"), train$price))
+print(rmse(predict(Aic_without_inter, test, type = "response"), test$price))
 
 #BIC 
-step(model1,scope=list(lower=model1,upper=lm1),direction="both",k=log(n))
+step(model1, scope = list(lower = model1, upper = lm1), direction = "both", k = log(n))
 
 Bic_without_inter = lm(price ~ Income_PerCapita + pct_pub_transport_log + 
-    EstimatedSpecialRate + BURGLRY + ROBBERY + LARCENY + Median_Family_Income + 
-    Premium + MidGrade + IDNO, data = train)
+                         EstimatedSpecialRate + BURGLRY + ROBBERY + LARCENY + 
+                         Median_Family_Income + Premium + MidGrade + IDNO, 
+                       data = train)
 
 print(Rsq(predict(Bic_without_inter, train, type = "response"), train$price))
 print(Rsq(predict(Bic_without_inter, test, type = "response"), test$price))
-rmse(predict(Bic_without_inter, train, type = "response"), train$price)
-rmse(predict(Bic_without_inter, test, type = "response"), test$price)
+print(rmse(predict(Bic_without_inter, train, type = "response"), train$price))
+print(rmse(predict(Bic_without_inter, test, type = "response"), test$price))
 
 #BIC with intercation:
-step(lm1,scope=list(lower=model1,upper=lm2),direction="both",k=log(n))
+step(lm1, scope = list(lower=model1, upper = lm2), direction = "both", k = log(n))
 
 Bic_with_inter = lm(price ~ Income_PerCapita + Median_Family_Income + Population + 
-    Num_Household + hilton_count + IDNO + CPOPCRIM + RAPE + ROBBERY + 
-    BURGLRY + LARCENY + Regular + MidGrade + Premium + Diesel + 
-    college_num + hwyprop + ryprop + pct_pub_transport_log + 
-    pct_unemp + private_school_count + Income_PerCapita:Diesel + 
-    hilton_count:hwyprop + IDNO:Premium + hilton_count:pct_unemp + 
-    Income_PerCapita:ryprop + Income_PerCapita:pct_pub_transport_log + 
-    IDNO:LARCENY + RAPE:MidGrade + LARCENY:MidGrade + Diesel:ryprop + 
-    hwyprop:private_school_count + IDNO:pct_unemp + Diesel:college_num + 
-    hilton_count:CPOPCRIM + hwyprop:pct_pub_transport_log + Median_Family_Income:pct_pub_transport_log, data = train)
+                      Num_Household + hilton_count + IDNO + CPOPCRIM + RAPE + ROBBERY +
+                      BURGLRY + LARCENY + Regular + MidGrade + Premium + Diesel + 
+                      college_num + hwyprop + ryprop + pct_pub_transport_log + 
+                      pct_unemp + private_school_count + Income_PerCapita:Diesel + 
+                      hilton_count:hwyprop + IDNO:Premium + hilton_count:pct_unemp + 
+                      Income_PerCapita:ryprop + 
+                      Income_PerCapita:pct_pub_transport_log + IDNO:LARCENY + 
+                      RAPE:MidGrade + LARCENY:MidGrade + Diesel:ryprop + 
+                      hwyprop:private_school_count + IDNO:pct_unemp + 
+                      Diesel:college_num + hilton_count:CPOPCRIM + 
+                      hwyprop:pct_pub_transport_log + 
+                      Median_Family_Income:pct_pub_transport_log, 
+                    data = train)
     
 print(Rsq(predict(Bic_with_inter, train, type = "response"), train$price))
 print(Rsq(predict(Bic_with_inter, test, type = "response"), test$price))
-rmse(predict(Bic_with_inter, train, type = "response"), train$price)
-rmse(predict(Bic_with_inter, test, type = "response"), test$price)
-
+print(rmse(predict(Bic_with_inter, train, type = "response"), train$price))
+print(rmse(predict(Bic_with_inter, test, type = "response"), test$price))
 ```
 
 Base on the results above, for the linear model, we decide to use the BIC with the interactions to do the predictions because it performs the lowest RMSE on both the training set and the test set. However, it consists so many interaction terms making the model less interpretable. 
@@ -870,8 +888,8 @@ We decide to try two training models to see whether they outperform the result o
 rf1 = randomForest(price ~ ., data = train, ntree = 2000)
 print(Rsq(predict(rf1, train, type = "response"), train$price))
 print(Rsq(predict(rf1, test, type = "response"), test$price))
-rmse(predict(rf1, train, type = "response"), train$price)
-rmse(predict(Aic_without_inter, test, type = "response"), test$price)
+print(rmse(predict(rf1, train, type = "response"), train$price))
+print(rmse(predict(Aic_without_inter, test, type = "response"), test$price))
 ```
 
 Although the random forest algorithm pretty good on the training set, it did not perform well on the test set (even worse than the linear model BIC with the interactions). 
@@ -881,27 +899,27 @@ fully connected neural networks + early stopping + bagging (no bootstrapping)
 
 ```{r}
 f = do.call(paste, as.list(colnames(county_data_modelling))) %>% 
-    str_replace_all(" ", " + ") %>%
-    str_replace("\\+", "~") %>%
-    as.formula()
+  str_replace_all(" ", " + ") %>%
+  str_replace("\\+", "~") %>%
+  as.formula()
 # bagging here
 nbags = 100
 # early stoppping by setting threshold
 nn2 = map(1:nbags, function(i){neuralnet(f, train, hidden = 10, threshold = 1.5)})
 y_train_pred = nn2 %>%
-    map(function(nn){compute(nn, train[, -1])$net.result}) %>%
-    unlist() %>%
-    matrix(ncol = nbags) %>%
-    rowMeans()
+  map(function(nn){compute(nn, train[, -1])$net.result}) %>%
+  unlist() %>%
+  matrix(ncol = nbags) %>%
+  rowMeans()
 y_test_pred = nn2 %>%
-    map(function(nn){compute(nn, test[, -1])$net.result}) %>%
-    unlist() %>%
-    matrix(ncol = nbags) %>%
-    rowMeans()
+  map(function(nn){compute(nn, test[, -1])$net.result}) %>%
+  unlist() %>%
+  matrix(ncol = nbags) %>%
+  rowMeans()
 print(Rsq(y_train_pred, train$price))
 print(Rsq(y_test_pred, test$price))
-rmse(y_train_pred, train$price)
-rmse(y_test_pred, test$price)
+print(rmse(y_train_pred, train$price))
+print(rmse(y_test_pred, test$price))
 ```
 
 The neural network prediction outperforms the other models (Much lower RMSE and much higher R^2). So we decide to use the neural networks to be the final model to do the predictions. 
@@ -931,10 +949,10 @@ We first get the prediction averaging housing price for each county under the ne
 
 ```{r}
 pred = nn2 %>%
-    map(function(nn){compute(nn, county_data_modelling[, -1])$net.result}) %>%
-    unlist() %>%
-    matrix(ncol = nbags) %>%
-    rowMeans()
+  map(function(nn){compute(nn, county_data_modelling[, -1])$net.result}) %>%
+  unlist() %>%
+  matrix(ncol = nbags) %>%
+  rowMeans()
 ```
 
 Because we have do the rescaling before, so we have to transmute it back to the original:
@@ -948,11 +966,10 @@ We merge the prediction result back to the original dataset and sepearte all cou
 Although most of the counties are Fair offer, we do have find several counties that are being highly overvalued or undervalued. We can recommend these undervalued counties to our audience and do not recommend these overvalued couties to our audience. 
 
 ```{r}
+### old ###
 county_data = county_data %>%
-    mutate(
-        predictions = pred,
-        diff = pred-price
-    )
+    mutate(predictions = pred,
+           diff = pred - price)
 
 for(i in 1:1668){
     if(county_data$diff[i] > 0.2 ){
@@ -977,6 +994,21 @@ for(i in 1:1668){
         county_data$recommend[i] = "Fair offer"
     }
 }
+### new ###
+recommend_level = function(x){
+  # return an integer in -3 ~ 3
+  pmax(0, pmin(3, ceiling(log2((abs(x) + 1e-10) / 0.05)))) * sign(x) + 4
+}
+recommend_text = c("Highly Highly Not Recommended", "Highly Not Recommended", 
+                   "Not Recommended", "Fair Offer", "Recommended", 
+                   "Highly Recommended", "Highly Highly Recommended")
+county_data = county_data %>%
+  mutate(predictions = pred,
+         diff = pred - price) %>%
+  mutate(recommend = recommend_text[recommend_level(diff)])
+### comments ###
+# "diff" is a function in R, so it is better to change the name of diff, if possible.
+### end ###
 ```
 
 
@@ -998,20 +1030,27 @@ At last, we bind these rating with the corresponding County(with State) and prep
 
 ```{r}
 rating = function(v){
-  mapvalues(v,sort(unique(v)),(1:length(unique(v)))*100/(length(unique(v))))
+  plyr::mapvalues(v, sort(unique(v)), 
+                  (1:length(unique(v))) * 100 / (length(unique(v))))
 }
 
 negative = function(x){
-  x = 100 - x
+  100 - x
 }
 
 county = county_data[,1:2] %>% as.data.frame() 
 
-library(plyr)
+# library(plyr)
+### comments ###
+# changed mapvalues in func rating to plyr::mapvalues
+### end ###
 county_data_recommend_for_shiny = county_data %>% 
-    select(price, Income_PerCapita, Regular, pct_pub_transport_log,EstimatedSpecialRate, BURGLRY, ROBBERY, LARCENY, Median_Family_Income, Premium, MidGrade, pct_pers_lt_pov,pct_unemp,
-num_shoppingmall, college_num, MURDER, EstimatedCountyRate ,public_school_count,CPOPCRIM, ryprop, private_school_count) %>%
-  sapply(.,rating) %>% as.data.frame() %>% mutate(
+  select(price, Income_PerCapita, Regular, pct_pub_transport_log, EstimatedSpecialRate,
+         BURGLRY, ROBBERY, LARCENY, Median_Family_Income, Premium, MidGrade, 
+         pct_pers_lt_pov, pct_unemp, num_shoppingmall, college_num, MURDER, 
+         EstimatedCountyRate, public_school_count, CPOPCRIM, ryprop, 
+         private_school_count) %>%
+  sapply(., rating) %>% as.data.frame() %>% mutate(
     EstimatedSpecialRate = negative(EstimatedSpecialRate),
     BURGLRY = negative(BURGLRY),
     ROBBERY = negative(ROBBERY),
@@ -1024,24 +1063,26 @@ num_shoppingmall, college_num, MURDER, EstimatedCountyRate ,public_school_count,
     EstimatedCountyRate = negative(EstimatedCountyRate),
     CPOPCRIM = negative(CPOPCRIM)
   ) %>% rowwise() %>%
-    mutate(safety = rowMeans(select(.,BURGLRY,ROBBERY,LARCENY,MURDER,CPOPCRIM)),
+    mutate(safety = rowMeans(select(., BURGLRY, ROBBERY, LARCENY, MURDER, CPOPCRIM)),
            income = Income_PerCapita,
-           transportation = rowMeans(select(.,pct_pub_transport_log,ryprop)),
-           cpi = rowMeans(select(.,Premium,Regular,MidGrade)),
-           economic = rowMeans(select(.,pct_pers_lt_pov,pct_unemp)),
-           tax = rowMeans(select(.,EstimatedSpecialRate,EstimatedCountyRate)),
-           school = rowMeans(select(.,public_school_count,private_school_count,college_num)),
+           transportation = rowMeans(select(., pct_pub_transport_log, ryprop)),
+           cpi = rowMeans(select(., Premium, Regular, MidGrade)),
+           economic = rowMeans(select(., pct_pers_lt_pov, pct_unemp)),
+           tax = rowMeans(select(., EstimatedSpecialRate, EstimatedCountyRate)),
+           school = rowMeans(select(., public_school_count, 
+                                    private_school_count, college_num)),
            shopping = num_shoppingmall,
-           Cheap = price 
-           ) %>%
-  select(Cheap,safety,income,transportation,cpi,economic,tax,school,shopping) %>%
-  bind_cols(county,.)
+           Cheap = price
+    ) %>%
+  select(Cheap, safety, income, transportation, cpi, 
+         economic, tax, school, shopping) %>%
+  bind_cols(county, .)
 ```
 
 
 ```{r}
 recommendation_for_shiny = county_data %>% 
-  select(County,State,recommend)
+  select(County, State, recommend)
 
 save(recommendation_for_shiny, file = "recommendation_part1.RData")
 save(county_data_recommend_for_shiny, file = "recommendation_part2.RData")
