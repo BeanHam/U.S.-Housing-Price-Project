@@ -1,4 +1,4 @@
----
+·---
 title: "sta523 final project"
 output: html_document
 runtime: shiny
@@ -1159,8 +1159,17 @@ shinyApp(
         h2("Variables explorer"),
 
         selectInput("color", "Color", vars),
-        selectInput("size", "Size", vars, selected = "Housing Price")
-        
+        selectInput("size", "Size", vars, selected = "Housing Price"),
+        hr(),
+               h4("Recommendation Level Instruction: "),
+               helpText("The larger the level, the more highly the county is recommended."),
+               helpText("- 1: Extremely Not Recommended."),
+               helpText("- 2: Highly Not Recommended."),
+               helpText("- 3: Not Recommended."),
+               helpText("- 4: Fair Offer."),
+               helpText("- 5: Recommened."),
+               helpText("- 6: Highly Recommended."),
+               helpText("- 7: Extremely Recommended.")
         ),
 
       tags$div(id="cite",
