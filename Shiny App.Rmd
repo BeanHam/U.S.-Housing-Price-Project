@@ -17,8 +17,8 @@ suppressMessages(library(lattice))
 ```{r, echo=FALSE}
 load("county_data.RData")
 load("county_plot.Rdata")
-load("recommendation_part1.RData")
-load("recommendation_part2.RData")
+load("recommendation1.Rdata")
+load("recommendation2.Rdata")
 ```
 
 Citation: https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
@@ -35,21 +35,13 @@ county_data = county_data %>%
          'Hospital Rating' = hospital_rating,
          'Num Of Shoppingmalls' = num_shoppingmall,
          'Risk Level' = RiskLevel) %>% 
-  left_join(.,recommendation_for_shiny, by=c("County","State")) %>% 
-  mutate(recommend = ifelse(recommend == "Highly Highly not Recommend. A very bad investment you may regret!", 1, 
-                             ifelse(recommend == "Highly not Recommend. Bad deal", 2, 
-                             ifelse(recommend == "Not Recommend. Worse than fair", 3,
-                             ifelse(recommend == "Fair offer", 4,
-                             ifelse(recommend == "Recommend. Better than fair", 5,
-                             ifelse(recommend == "Highly Recommend. Great Deal.", 6, 7)))))))
-
+  left_join(.,recommendation_for_shiny, by=c("County","State")) 
 
 county_plot=county_data %>% 
     left_join(county_plot, by=c("State","County")) %>% 
     na.omit()
     
 state_list = unique(county_data$State)
-
 
 variable_list = c("State",
                   "County",

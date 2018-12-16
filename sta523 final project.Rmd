@@ -1,28 +1,22 @@
 ---
+title: "STA 523 Final Project"
 output:
-  html_document: default
   pdf_document: default
----
-·---
-title: "sta523 final project"
-output: html_document
-runtime: shiny
+  html_document: default
 ---
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-I. Introduction 
+### I. Introduction 
 
 For this project, we want to analyze the average housing prices across different counties in the United States. Nowadays, more people begin to immigrate to the United States, including some of our friends. They move to different counties acrossing the country and brought their own houses. However, the price of their houses acting so differently acrossing each counties. 
 
 Therefore, we are curious about the factors that will affect the price of the houses and we want to analyze the housing prices with different variables trying to find out the reasons behind that phenomenom. We also want to do some data visualizations to present a more clear picture to our audience about the distributions of housing price across different states and some time series housing price plots for some major counties. 
 
-
-II. Project goals and the outlines 
+### II. Project goals and the outlines 
 
 1. To make an acurrate model that can predict the housing price with variables given.
 
@@ -33,29 +27,25 @@ II. Project goals and the outlines
 4. Built UI dashboard (Shiny) to visualize data and deliver data insight to audiences including plots & tables
 
 
-III. Selecting the variables 
+### III. Selecting the variables 
 
 We use two methods to choose the variables that we want to scrape:
 
-1. Focus group research
+1. Focus group research: We conduct a survey to reach out our friends and our parents' friends who recently brought the houses in the United States or who planned to buy the houses in the United States. We ask them the factors that they thought are most important when they are planning to buy a house. We summarized these top factors into the potential variables pool one. 
 
-We conduct a survey to reach out our friends and our parents' friends who recently brought the houses in the United States or who planned to buy the houses in the United States. We ask them the factors that they thought are most important when they are planning to buy a house. We summarized these top factors into the potential variables pool one. 
-
-2. Research Paper 
-
-We read the research paper written by other people to learn which factors they may think are important to the price of houses. Some of the reseach paper from the economic department are very valuable to us because these authors conducted very comprehensive surveys and complicated models to conclude the major factors driving the price of the houses. So we summarized these factors into the potential variables pool two.
+2. Research Paper: We read the research paper written by other people to learn which factors they may think are important to the price of houses. Some of the reseach paper from the economic department are very valuable to us because these authors conducted very comprehensive surveys and complicated models to conclude the major factors driving the price of the houses. So we summarized these factors into the potential variables pool two.
 
 Surprisingly, we discovered that some factors appear in both potential variables pool one and pool two. So we decide to use these variables for our analyze. 
 
 
-IV. Scraping the data and clean the data sets.
+### IV. Scraping the data and clean the data sets.
 
 The final variables we want to include are population data, income data, hotel data, safety data, tax rate data, gasoline price data, college data, high school data, Traffic data, shopping mall(convinience) data and Hospital data. Since the time is limited otherwise there may be some few other data that we want to include. 
 
 We find these data sources and scrape these data down using various methods. After that we clean the dataset to make sure it's tidy and can get prepared for the final modelling. We also simplified our codes to make sure it's clear and elegant. Finally, we combined all these data into one single dataframe which will be used for the final modelling and visualizations. 
 
 
-V. Data checkings (EDA)
+### V. Data checkings (EDA)
 
 We do the final checks before we start to build the models. We draw some scatter plots and box plots for our varaibles, checking for any anomalies or NA values. Looking for potential outliers, etc. The final preparation stage before the modelling.
 
@@ -63,7 +53,7 @@ The final checkings includes: 1. There is no missing values, 2. There is no seri
 5. Distributions are not weird
 
 
-VI. Modelling 
+### VI. Modelling 
 
 This section we try to build the models for our data. Our models have two ultimate goals:
 
@@ -97,7 +87,7 @@ For the Second goal, we got the important factors that will affect the housing p
 8. Number of shopping malls
 
 
-VII. Housing Recommendations 
+### VII. Housing Recommendations 
 
 For the housing Recommendations, we mainly have two parts:
 
@@ -111,16 +101,14 @@ Since we have acquire the important variables that people will consider when the
 
 The output will be the top counties and the average scores. So the audience can have an idea on which county should they consider to buy the houses based on the variables they selected. Besides the 8 important variables we concluded in the linear model section, we also include the variable price in case that the audience want cheaper houses. 
 
-VIII. User Interface (Shiny)
+### VIII. User Interface (Shiny)
 
 Based on the dataframe and modeling results, we created multiple visualizations to explicitely deliver informative insights, demonstrate exiciting and unique findings, and provide recommendations to the end users. The visualizations include tables, barplots, and map views. They serve different roles to meet different needs from end users. For instance, the table visualization contains general information of each county, such as income per capita, population, average housing price etc. It gives users an overall idea of what the county looks like. The average housing price bar plot provides users the chance to deeply look at the distribution of housing price of each county within a state. It is designed in an user-friendly approach, allowing them to specify the price range they are interested in. 
-
-
 
 The shiny app serves as an interface to incorporate all the visualizations and provide instructions of how to use them. It allows users to specify different variables and aspects they are interested in and provide detailed information. More details can be refered to the "Shiny App.Rmd" file. 
 
 
-```{r, warning = F, message = F, output = F}
+```{r, warning = F, message = F, output = F, echo=FALSE}
 suppressMessages(library(Quandl))
 suppressMessages(library(readr))
 suppressMessages(library(rvest))
@@ -394,7 +382,7 @@ Number of Shopping mall is an important indicator to the housing price because o
 
 2: Shopping mall itself can attract people come/ travel to that county
 
-3. More shopping mall implies more people live nearby, thus higher housing price.
+3: More shopping mall implies more people live nearby, thus higher housing price.
 
 Therefore, we scrape the shopping mall data from the online sources.
 
@@ -403,39 +391,24 @@ However, that one is a bit tricky. Because for different states, shopping mall a
 
 For data stored in wikitable forms, it has two categories: needed to be flatten and dont needed to be flatten. So I write two different functions o scrape these data. 
 
-For the table which needs to be flatten:
+* For the table which needs to be flatten: 
 
 the input are state name (used for the url), n1, the second data list we needed (the first data list is 1), k, the interval between each data list we needed, and n4,n5,l4,l5 are just the last two names and last two locations of shopping mall data list we needed. We need these n4,n5,l4,l5 because for some states they only have 4 data lists we needed for both name and location, so we can use NA for these 4 inputs. 
 
 After we read and flatten the wikitable, we got a list that inside this large list, some of the list contains the name and location we want and some contains the information we dont want. So we have to acquire the corresponding data we want and to make it into the dataframe with two columns: name and location. And we return that dataframe. 
-
-
-For the table dont need to be flatten:
+* For the table dont need to be flatten:
 
 That's much easier. we simply read that wikitable and the whole list did not contain the data we dont want. Simply all names are stored in the list 1 and all locations are stored in the list 2. So we return that dataset with two columns: name and location. The input is only state using for the url.
 
+* For the lists:
 
-For the lists:
+We use "html_nodes(page, "li") %>% html_text()" to scrape the corresponding data we needed from the list in wikipedia. We also need an input n because in the lists, after the shopping mall name and location, there are also other information stored in that list that we dont want. Therefore, because we already know the number of shopping mall within each state, we have to input that n (the number of shopping mall in that state = the number of useful rows in the list) so we are not getting any annoying data. 
 
-We use "html_nodes(page, "li") %>% html_text()" to scrape the corresponding data we needed from the list in wikipedia. 
-
-We also need an input n because in the lists, after the shopping mall name and location, there are also other information stored in that list that we dont want. Therefore, because we already know the number of shopping mall within each state, we have to input that n (the number of shopping mall in that state = the number of useful rows in the list) so we are not getting any annoying data. 
-
-This is not hardcoding because there's no other way to do it more efficiently and we have tried our best to simplify the code here.
-
-
-Therefore, we scrape the data for different states directly using these three functions but for texas, it's different. Because in the texas shopping mall website, data is stored in different wikitables and lists. So i write a function read_taxas and the input p is simply the ID of wikitable stored in that website.
-
+This is not hardcoding because there's no other way to do it more efficiently and we have tried our best to simplify the code here. Therefore, we scrape the data for different states directly using these three functions but for texas, it's different. Because in the texas shopping mall website, data is stored in different wikitables and lists. So i write a function read_taxas and the input p is simply the ID of wikitable stored in that website.
 
 After scraping all these dataset down we have to clean the location data because the original dataset are very messy. We use seperate the select to remove all unuseful (), latitute, longitude, state information inside the location.
 
-For each state's data We scrape, we mutate a new column state and generate the corresponding state to it in order for the group by below.
-
-Finally, we bind all these data into the dataframe shopping mall data. 
-
-In that final shopping mall data we still have some problems: all letters are in the uppercase and there's some head blanks in some of the observations.
-
-So we did some data manipulations and merge it with the cities data we constructed before (to match the city to the counties).
+For each state's data We scrape, we mutate a new column state and generate the corresponding state to it in order for the group by below. Finally, we bind all these data into the dataframe shopping mall data. In that final shopping mall data we still have some problems: all letters are in the uppercase and there's some head blanks in some of the observations. So we did some data manipulations and merge it with the cities data we constructed before (to match the city to the counties).
 
 After matching to the counties, we summarize the number of shopping malls in each counties and merge it with the base dataset. Replacing NA with 0s. 
 
@@ -746,7 +719,7 @@ test = county_data_modelling[- train_index, ]
 ```
 
 
-1. linear model
+## 1. linear model
 
 The first model we tried is the linear model. We think that the linear model may be the most appropriate model for our project because:
 
@@ -871,7 +844,7 @@ To conclude, from our modelling result, the important factors that will affect t
 8. Number of shopping malls
 
 
-random forest
+## 2. random forest
 
 We decide to try two training models to see whether they outperform the result of the linear model:
 
@@ -1030,456 +1003,11 @@ county_data_recommend_for_shiny = county_data %>%
   select(Cheap, safety, income, transportation, cpi, 
          economic, tax, school, shopping) %>%
   bind_cols(county, .)
+
 ```
 
-
-```{r}
-recommendation_for_shiny = county_data %>% 
-  select(County, State, recommend)
-
-load("county_plot.Rdata")
-```
-
-
-## Shiny
-
-Citation: https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
 
 ```{r, echo=FALSE}
-county_data = county_data %>% 
-  rename('Housing Price' = price,
-         'Income Per Capita' = Income_PerCapita,
-         'Crime Rate' = crime_rate_per_100000,
-         'Unemployment Rate' = pct_unemp,
-         'Num Of Colleges' = college_num,
-         'Num Of Public Schools' = public_school_count,
-         'Num Of Private Schools' = private_school_count,
-         'Hospital Rating' = hospital_rating,
-         'Num Of Shoppingmalls' = num_shoppingmall,
-         'Risk Level' = RiskLevel) %>% 
-  left_join(., recommendation_for_shiny %>% select(- recommend), 
-            by = c("County", "State"))
-
-
-county_plot = county_data %>% 
-    left_join(county_plot, by = c("State","County")) %>% 
-    na.omit()
-    
-state_list = unique(county_data$State)
-
-
-variable_list = c("State",
-                  "County",
-                  "Population",
-                  "Crime Rate",
-                  "Risk Level",                  
-                  "Housing Price",
-                  "Hospital Rating",                  
-                  "Num Of Colleges",
-                  "Income PerCapita",  
-                  "Unemployment Rate",                    
-                  "Num Of Public Schools",
-                  "Num Of Private Schools",
-                  "Num Of Shoppingmalls")
-
-vars = c("Population",
-         "Crime Rate",
-         "Risk Level",                  
-         "Housing Price",
-         "Hospital Rating",                  
-         "Num Of Colleges",
-         "Income PerCapita",  
-         "Unemployment Rate",                    
-         "Num Of Public Schools",
-         "Num Of Private Schools",
-         "Num Of Shoppingmalls")
+recommendation_for_shiny = county_data %>% 
+  select(County, State, recommend)
 ```
-
-
-
-
-```{r shiny, warning=FALSE, message=FALSE}
-#if dont have package DT
-#install.packages("DT")
-
-shinyApp(
-  ui = tagList(
-    navbarPage(
-    theme = shinytheme("cosmo"),      
-    "U.S. County Housing Price",
-    tabPanel("County Outlook", 
-             sidebarPanel(
-               selectInput("state", 
-                           "Select A State", 
-                           choices = state_list, 
-                           selected = 1),
-               checkboxGroupInput("variable","Select variables to view", variable_list),
-               actionButton("update", "Update"),
-               hr(),
-               h3("Variable Dictionary: "),
-               helpText("- Crime Rate: number of crimes per 100,000"),
-               helpText("- Risk Level: 9 - Highest; 0 - lowest"),
-               helpText("- Housing Price: $1000/square-meters"),
-               helpText("- Hospital Rating: 5 - highest; 0 - lowest"),
-               helpText("- Unemployment Rate: in percentage")
-               ),
-             mainPanel(
-               DT::dataTableOutput("table1")
-               )),
-    
-    tabPanel("County Housing Price",
-             sidebarPanel(
-               selectInput("state_hist", 
-                           "Select A State", 
-                           choices = state_list, 
-                           selected = 1),
-               sliderInput("slide", 
-                           label = "Choose Your Price Range", 
-                           min = 0.406, max = 4, value = c(0.5, 0.6)),
-               actionButton("bargraph", "Get Housing Price Distribution"),
-               hr(),
-               h3("Variable Dictionary: "),
-               helpText("- Housing Price: $1000/m^2")
-               ),
-             mainPanel(
-               plotOutput("distribution")
-             )),
-    
-    
-    ## create an interactive map
-    tabPanel("Interactive map", 
-             div(class="outer",
-
-      tags$head(
-        # Include our custom CSS
-        includeCSS("styles.css"),
-        includeScript("gomap.js")
-      ),
-
-      leafletOutput("map", width="100%", height="100%"),
-      absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-        draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
-        width = 330, height = "auto",
-
-        h2("Variables explorer"),
-
-        selectInput("color", "Color", vars),
-        selectInput("size", "Size", vars, selected = "Housing Price"),
-        hr(),
-               h4("Recommendation Level Instruction: "),
-               helpText("The larger the level, the more highly the county is recommended."),
-               helpText("- 1: Extremely Not Recommended."),
-               helpText("- 2: Highly Not Recommended."),
-               helpText("- 3: Not Recommended."),
-               helpText("- 4: Fair Offer."),
-               helpText("- 5: Recommened."),
-               helpText("- 6: Highly Recommended."),
-               helpText("- 7: Extremely Recommended.")
-        ),
-
-      tags$div(id="cite",
-        'Data compiled for ', tags$em('Coming Apart: The State of White America, 1960–2010'), ' by Charles Murray (Crown Forum, 2012).',"code from https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example"
-      )
-      )
-      ),
-    
-    
-    ## recommendation system
-    tabPanel("Recommendation Level -- From Modeling", 
-             sidebarPanel(
-               selectInput("state_rd", "Select A State", choices = state_list, selected = 1),
-               actionButton("recommend", "Get Recommendation"),
-               hr(),
-               h4("Recommendation Level Instruction: "),
-               helpText("The larger the level, the more highly the county is recommended."),
-               helpText("- 1: Extremely Not Recommended."),
-               helpText("- 2: Highly Not Recommended."),
-               helpText("- 3: Not Recommended."),
-               helpText("- 4: Fair Offer."),
-               helpText("- 5: Recommened."),
-               helpText("- 6: Highly Recommended."),
-               helpText("- 7: Extremely Recommended.")           
-               
-               ),
-             mainPanel(
-               plotOutput("recommendation_level", height = "600px"),
-               htmlOutput(("Instruction"))
-               )),
-    
-    
-    tabPanel("Recommendation Score -- From Dataset", 
-             sidebarPanel(
-               selectInput("rank_state", 
-                           "Select A State", 
-                           choices = state_list,
-                           selected = 1),
-               
-               checkboxGroupInput("variable_rd",
-                                  "Select variables to rank",
-                  c("Cheap","safety","income","transportation","cpi","economic","tax","school","shopping")),
-               actionButton("rank", "Get Recommendation Score"),
-               hr(),
-               h3("Variable Dictionary: "),
-               helpText("- Cheap: the cheaper the housing price, the higher the score"),
-               helpText("- Safety: the safer the county area is, the higher the score"),
-               helpText("- Income: the higher the income level in the county, the higher the score"),
-               helpText("- Transportation: the more convenient the transportation is, the higher the score"),
-               helpText("- CPI: the higher the CPI is, the higher the score"),
-               helpText("- Economic: the more developed the county is, the higher the score"),
-               helpText("- Tax: the lower the tax rate is, the higher the score"),
-               helpText("- School: the larger number of schools in the county, the higher the score"),
-               helpText("- Shopping: the larger number of shopping malls in the county, the higher the score")
-               ),
-             mainPanel(
-               htmlOutput("rank_level_instruction"),
-               plotOutput("rank_plot", height = "500px")
-               ))
-))
-,
-  
-  server = function(input, output, session){
-    
-    ## panel1 
-    tabledata = eventReactive(
-      input$update,{
-      county_data %>% filter(State == input$state) %>% select(input$variable)
-    })
-    
-    output$table1 = DT::renderDataTable(DT::datatable({
-      tabledata()
-      }))
-    
-    
-    ## panel 2
-    observeEvent(
-      input$state_hist, {
-        histdata = county_data %>% filter(State == input$state_hist)
-        updateSliderInput(session, "slide",
-                          min = min(histdata$`Housing Price`),
-                          max = max(histdata$`Housing Price`))
-      })
-    
-    histdata = eventReactive(
-      input$bargraph, {
-        county_data %>% filter(State == input$state_hist,
-                               `Housing Price`<= input$slide[2],
-                               `Housing Price` >= input$slide[1])
-      }
-    )
-    
-    output$distribution = renderPlot({
-      plot = histdata()
-      
-      ggplot(data = plot, 
-             aes(x = reorder(County, -`Housing Price`), 
-                 y = `Housing Price`,
-                 fill = `Housing Price`)) +
-        geom_bar(stat = "identity",
-                 color = "black",
-                 position = position_dodge()) +
-        geom_text(aes(label = `Housing Price`),
-                  position = position_dodge(0.9),
-                  vjust = 1.6,
-                  size = 3.5,
-                  color = "black") +
-        xlab("County") +
-        ylab("Housing Price ($1000/m^2)") +
-        theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1)) +
-        scale_fill_gradient(low="lightblue", high="pink")
-      })
-    
-    
-    ## panel 3
-    # Create the map
-    output$map <- renderLeaflet({
-      leaflet() %>%
-        addTiles(
-          #urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-          attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-          ) %>%
-        setView(lng = -93.85, lat = 37.45, zoom = 4)
-      })
-    
-    observe({
-    colorBy <- input$color
-    sizeBy <- input$size
-
-    colorData <- county_plot[[colorBy]]
-    pal <- colorBin("viridis", colorData, 7, pretty = FALSE)
-    radius <- county_plot[[sizeBy]] / max(county_plot[[sizeBy]]) * 30000
-    
-
-    leafletProxy("map", data = county_plot) %>%
-      clearShapes() %>%
-      addCircles(~Long, ~Lat, radius=radius, layerId=~Zipcode,
-        stroke=FALSE, fillOpacity=0.4, fillColor=pal(colorData)) %>%
-      addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
-        layerId="colorLegend")
-    })
-    
-    # Show a popup at the given location
-    showZipcodePopup <- function(zipcode, lat, lng) {
-    selectedZip <- county_plot[county_plot$Zipcode == zipcode,]
-    content <- as.character(tagList(
-      tags$h4(selectedZip$recommend),
-      tags$strong(HTML(sprintf("%s, %s %s",
-        selectedZip$City, selectedZip$County, selectedZip$State)))
-    ))
-    leafletProxy("map") %>% addPopups(lng, lat, content, layerId = zipcode)
-    }
-
-    # When map is clicked, show a popup with city info
-    observe({
-      leafletProxy("map") %>% clearPopups()
-      event <- input$map_shape_click
-      if (is.null(event))
-        return()
-      
-      isolate({
-        showZipcodePopup(event$id, event$lat, event$lng)
-      })
-    })
-  
-    ### panel 4
-    barplotdata = eventReactive(
-      input$recommend,{
-        county_data %>% 
-          filter(State==input$state_rd) %>% 
-          select(County,recommend) %>% 
-          arrange(recommend)
-        
-    })
-    
-    output$Instruction = renderUI({
-      
-      str1 = "The recommendation level is based on the test result from the predicting model underneath the App. The smaller difference between the real price and the predicted price, the more highly the county is recommended."
-      str2 = "Choose a state you want to look at and check the recommendation levels for all the counties within that state."
-      
-      HTML(paste(str1, str2, sep = '<br/><br/>'))
-    })
-    
-    
-    output$recommendation_level = renderPlot({
-      barplot=barplotdata()
-      
-      ggplot(data = barplot, 
-             aes(x = reorder(County, -recommend), 
-                 y = recommend,
-                 fill = recommend)) + 
-        geom_bar(stat="identity",
-                 width = 1) + 
-        xlab("County") + 
-        ylab("recommendation level") +
-        coord_flip() +
-        theme(axis.text.y = element_text(size = 8))
-      })
-    
-    
-    
-    ### panel5 
-    tabledata2 = eventReactive(
-      input$rank,{
-        
-        state_county = county_data_recommend_for_shiny %>% 
-          filter(State == input$rank_state) %>% 
-          select(County, State)
-        
-        county_data_recommend_for_shiny %>% 
-          filter(State == input$rank_state) %>% 
-          select(input$variable_rd) %>% 
-          mutate(average = round(rowSums(.)/ncol(.), 2),
-                 location = paste(state_county$County,
-                                  ",",
-                                  state_county$State)) %>% 
-          arrange(desc(average)) %>% 
-          .[1:20, ]
-        })
-    
-    output$rank_level_instruction = renderUI({
-      
-      str1 = "Based on the values of each variable, we assigned a generalized score for each variable in each county. The higher the score is, the better the indicator is. The overall recommendation score is the average score of all the variables you choose."
-      str2 = "Choose a state or multiple states you want to look at and select the features that are more important to you. Then check which county is the best for you!"
-      
-      HTML(paste(str1, str2, sep = '<br/><br/>'))
-    })
-        
-        
-    output$rank_plot = renderPlot({
-      plot = tabledata2()
-      
-      ggplot(data = plot, 
-             aes(x = reorder(location, -average), 
-                 y = average,
-                 fill = average)) +
-        geom_bar(stat = "identity",
-                 color = "black",
-                 position = position_dodge()) +
-        geom_text(aes(label = average),
-                  position = position_dodge(0.9),
-                  vjust = 1.6,
-                  size = 3.5,
-                  color = "black") +
-        xlab("State & County") +
-        ylab("Overall Recommendation Score") +
-        theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1)) +
-        scale_fill_gradient(low="lightblue", high="pink")
-      })
-    
-    }
-)
-```
-
-Citation: 
-1. https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix
-2. https://stackoverflow.com/questions/17838709/scale-and-size-of-plot-in-rstudio-shiny
-3. https://stackoverflow.com/questions/23233497/outputting-multiple-lines-of-text-with-rendertext-in-r-shiny
-
-
-## Shiny App Details
-There are five different panels in our shiy app, with each one containing different information and serving different functions. The steps to build these panals and the functionalities of them will be articulated in details:  
-
-The overall set up of the shiny app is a `navbarPage` under the `tagList`. We created five `tabPanel` with the page and applied the theme "cosmo". 
-
-### 1. County Outlook: 
-
-- Construction: the first panel is called "County Outlook", which contains a table with general information of each county, such as GDP, population, unemployment rate etc. In the `sidebarPanel`, users can select whichever state they want to look at and choose the variables they are interested in. We also added some `helpText` to explain each variable to help users understand. The `mainPanel` displays a table.  
-
-- Functionality: This panel gives users an overall idea of what each county looks like. Instead of just showing the average housing price for each county, they can capture more useful information. Additionally, users can sort any column and search any key word on the table.
-
-- Usage: Users choose a state and specify the variables they are interested from the provided list. By clicking the "update" button, the table will show up.
-
-### 2. County Housing Price: 
-
-- Construction: similarly, we added a `selectInput`, allowing users to select a state they want to look at. Then we incorporated a`sliderInput` for users to specify the housing price range. Since the range for each state is different, we used an `obserEvent` function to update the max and min value of sliderInput once there is anything changed in "state_list". Once the "histogram" button is triggered, the `mainPanel` will generate a barplot, with `County` on the horizontal axis and `Housing Price` on the vertical axis.
-
-- Funcationality: considering that some users are interested in the distribution of housing prices in different counties in a state, we created this panel. It can help users narrow the search scope of different locations.
-
-- Usage: Choose a state and the slider range will automatically update. Then move the slider and specify the range you want to look at. Then click "Get Housing Price Distribution" button.
-
-### 3. Interactive Map
-
-- Another designed function of our shiny App is the interactive map. In this tabpanel users can select two interested variables from the previous dataset we obtained and they will be plotted on the US map. After looking at an excellent example called "SuperZip" from shiny gallery, we used leaflet package to draw this elegant map but to find the location of each county we need to use its coordinates. To solve this task we used the longitude, latitude and Zipcode of some cities in one county and cities in one county will have identical values such as housing price,income per capita.
-
-- In the server function we created a map first and then drew tiny circles representing cities on the top of previous map layer. The radius and the color of each circle is controlled by input variables so that our users can compare the values by the circle size and  color. The reason why we decided to change the color and size at the same time is to explore the interactions between the selected two variables. In addition we added our recommendation results to a popup window.
-
-
-### 4. Recommendation Level -- From Modeling
-
-- Construction: similar as before, we added a `selectInput` for users to choose a state. We alsp provided the explanations of different recommendation levels using `helpText`. The `mainPanel` contains a `plotOutput` and a `htmlOutput`. We used a `eventReactive` function to create a new dataframe only containing the observations of the state users specify. Afterthen, when the "recommend" button is clicked, a barplot will be generated, with different recommendation level grouped together. 
-
-- Funcationality: this panel is used to show what is the recommended county from the modeling step. If the real price and predictive price are very close for a county, then we say the county is recommended (based on the magnitude of the difference, we classify the level of recommendation). This will give users some idea of whether a county is worth an investment or not in general. 
-
-- Usage: Choose a state and click "Get Recommendation". Then a bar plot will show up.
-
-### 5. Recommendation Score -- From Dataset
-
-- Construction: In the last panel, we used a `selectInput` for state choice and used `checkboxGroupInput` for users to choose different variables. Same as the 4th panel, we added some `helpText` to help readers understand what are those variables. The `mainPanel` contains a `htmlOutput` and a `plotOutput`. In the mainPanel, we used an `evenReactive` function. Whenever the input state changes, a dataframe will be generated correspondingly, with the overall recommendation score as a variable. Then a bar plot will be created, with County&State on the horizontal axis and recommendation score on the vertical axis.
-
-- Functionality: we used a different datafram for this panel. Based on the values of each variable in the original dataset, we assigned a generalized score for each value of that variable from 0 - 100. And then we average the generalized scores of the variables that users choose to calculate the overall score. The recommendation from 4th panel is based on the modeling result, showing how close the predicted value is to the real value. However, in this panel, users can specify the variables to be used in the recommendation system and we calculate the score in the backstage. The higher the score, the more recommended the county is.
-
-- Usage: select one or more states and click "Get Recommendation Score".
-
-
-
-
-
