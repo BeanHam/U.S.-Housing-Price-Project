@@ -399,6 +399,9 @@ Citation:
 3. https://stackoverflow.com/questions/23233497/outputting-multiple-lines-of-text-with-rendertext-in-r-shiny
 
 
+## Instruction
+Since the shiny app cannot be knitted in the project.rmd file due to directory changes, we separate this Shiny App.rmd file to show the shiny app we made. To use the shiny app, simply run all the chunks and it will automatically show up. 
+
 ## Shiny App Details
 There are five different panels in our shiy app, with each one containing different information and serving different functions. The steps to build these panals and the functionalities of them will be articulated in details:  
 
