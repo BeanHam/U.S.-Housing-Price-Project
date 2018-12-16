@@ -1,6 +1,7 @@
 ---
 title: "sta523 final project"
 output: html_document
+runtime: shiny
 ---
 
 ```{r setup, include = FALSE}
@@ -348,6 +349,8 @@ After matching these schools with their corresponding counties we summarize the 
 
 ```{r message = FALSE, warning = FALSE}
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
+
+setwd("..")
 
 cities = zip_county_lookup %>% select(CITY, County, STATE) %>% unique() %>%
   rename(State = STATE, City = CITY)
