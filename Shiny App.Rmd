@@ -184,8 +184,7 @@ shinyApp(
                selectInput("rank_state", 
                            "Select A State", 
                            choices = state_list,
-                           selected = 1,
-                           multiple = TRUE),
+                           selected = 1),
                
                checkboxGroupInput("variable_rd",
                                   "Select variables to rank",
