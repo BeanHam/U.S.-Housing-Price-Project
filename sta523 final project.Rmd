@@ -764,11 +764,11 @@ n = dim(train)[1]
 #AIC & BIC without the interaction terms:
 
 #AIC:
-step(model1,scope=list(lower=model1,upper=lm1),direction="both",k=2)
+# step(model1, scope = list(lower = model1, upper = lm1), direction = "both", k = 2)
 
 Aic_without_inter = lm(formula = price ~ Income_PerCapita + Regular + 
                          pct_pub_transport_log + EstimatedSpecialRate + BURGLRY + 
-                         ROBBERY + LARCENY + Median_Family_Income + Premium + 
+                         ROBBERY + LARCENY + Median_Family_Income + Premium +
                          MidGrade + IDNO + pct_pers_lt_pov + pct_unemp + 
                          num_shoppingmall + college_num + MURDER + 
                          EstimatedCountyRate + Median_Household_Income + 
@@ -782,7 +782,7 @@ print(rmse(predict(Aic_without_inter, train, type = "response"), train$price))
 print(rmse(predict(Aic_without_inter, test, type = "response"), test$price))
 
 #BIC 
-step(model1, scope = list(lower = model1, upper = lm1), direction = "both", k = log(n))
+# step(model1, scope = list(lower = model1, upper = lm1), direction = "both", k = log(n))
 
 Bic_without_inter = lm(price ~ Income_PerCapita + pct_pub_transport_log + 
                          EstimatedSpecialRate + BURGLRY + ROBBERY + LARCENY + 
@@ -795,7 +795,7 @@ print(rmse(predict(Bic_without_inter, train, type = "response"), train$price))
 print(rmse(predict(Bic_without_inter, test, type = "response"), test$price))
 
 #BIC with intercation:
-step(lm1, scope = list(lower=model1, upper = lm2), direction = "both", k = log(n))
+# step(lm1, scope = list(lower=model1, upper = lm2), direction = "both", k = log(n))
 
 Bic_with_inter = lm(price ~ Income_PerCapita + Median_Family_Income + Population + 
                       Num_Household + hilton_count + IDNO + CPOPCRIM + RAPE + ROBBERY +
@@ -954,17 +954,14 @@ Although most of the counties are Fair offer, we do have find several counties t
 
 ```{r}
 recommend_level = function(x){
-  # return an integer in -3 ~ 3
+  # return an integer in 1 ~ 7
   pmax(0, pmin(3, ceiling(log2((abs(x) + 1e-10) / 0.05)))) * sign(x) + 4
 }
-recommend_text = c("Highly Highly Not Recommended", "Highly Not Recommended", 
-                   "Not Recommended", "Fair Offer", "Recommended", 
-                   "Highly Recommended", "Highly Highly Recommended")
+
 county_data = county_data %>%
   mutate(predictions = pred,
          difference = pred - price) %>%
-  mutate(recommend = recommend_text[recommend_level(difference)])
-
+  mutate(recommend = recommend_level(difference))
 ```
 
 
@@ -1056,17 +1053,12 @@ county_data = county_data %>%
          'Hospital Rating' = hospital_rating,
          'Num Of Shoppingmalls' = num_shoppingmall,
          'Risk Level' = RiskLevel) %>% 
-  left_join(.,recommendation_for_shiny, by=c("County","State")) %>% 
-  mutate(recommend = ifelse(recommend == "Highly Highly not Recommend. A very bad investment you may regret!", 1, 
-                             ifelse(recommend == "Highly not Recommend. Bad deal", 2, 
-                             ifelse(recommend == "Not Recommend. Worse than fair", 3,
-                             ifelse(recommend == "Fair offer", 4,
-                             ifelse(recommend == "Recommend. Better than fair", 5,
-                             ifelse(recommend == "Highly Recommend. Great Deal.", 6, 7)))))))
+  left_join(., recommendation_for_shiny %>% select(- recommend), 
+            by = c("County", "State"))
 
 
-county_plot=county_data %>% 
-    left_join(county_plot, by=c("State","County")) %>% 
+county_plot = county_data %>% 
+    left_join(county_plot, by = c("State","County")) %>% 
     na.omit()
     
 state_list = unique(county_data$State)
@@ -1086,17 +1078,17 @@ variable_list = c("State",
                   "Num Of Private Schools",
                   "Num Of Shoppingmalls")
 
-vars=c("Population",
-       "Crime Rate",
-       "Risk Level",                  
-       "Housing Price",
-       "Hospital Rating",                  
-       "Num Of Colleges",
-       "Income PerCapita",  
-       "Unemployment Rate",                    
-       "Num Of Public Schools",
-       "Num Of Private Schools",
-       "Num Of Shoppingmalls")
+vars = c("Population",
+         "Crime Rate",
+         "Risk Level",                  
+         "Housing Price",
+         "Hospital Rating",                  
+         "Num Of Colleges",
+         "Income PerCapita",  
+         "Unemployment Rate",                    
+         "Num Of Public Schools",
+         "Num Of Private Schools",
+         "Num Of Shoppingmalls")
 ```
 
 
