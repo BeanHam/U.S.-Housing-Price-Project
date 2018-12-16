@@ -298,12 +298,10 @@ However, that data is a zipfile and after unzip it, it becomes a folder. So we f
 Finally, we merge that tax rate dataset with our base dataset. 
 
 ```{r message = FALSE, warning = FALSE}
-setwd("TAXRATES_ZIP5")
-
-price_2017 = list.files(pattern = "*.csv") %>%
-  map(read.csv) %>%
+price_2017 = list.files(paste0(getwd(), "/TAXRATES_ZIP5"), pattern = "*.csv") %>%
+  map(function(filename){read.csv(paste0("TAXRATES_ZIP5/", filename))}) %>%
   {do.call(bind_rows, .)} %>%
-  left_join(zip_county_lookup,by = c("ZipCode"="ZIP")) %>%
+  left_join(zip_county_lookup, by = c("ZipCode"="ZIP")) %>%
   select(County, State, StateRate, EstimatedCombinedRate, EstimatedCountyRate,
          EstimatedCityRate, EstimatedSpecialRate, RiskLevel) %>%
   {.[!duplicated(.[,1:2]), ]} %>%
@@ -349,8 +347,6 @@ After matching these schools with their corresponding counties we summarize the 
 
 ```{r message = FALSE, warning = FALSE}
 ## reference: https://nces.ed.gov/ipeds/datacenter/InstitutionProfile.aspx
-
-setwd("..")
 
 cities = zip_county_lookup %>% select(CITY, County, STATE) %>% unique() %>%
   rename(State = STATE, City = CITY)
